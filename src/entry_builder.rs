@@ -16,14 +16,18 @@ impl EntryBuilder {
     pub fn process_tokens(&mut self, tokens: Vec<&str>) {
         let first_token = tokens.first().unwrap();
 
-        if self.entry.is_none() && first_token.eq(&"SF") {
-            if tokens.len() != 2 {
-                panic!("Invalid SF format");
-            }
+        if self.entry.is_none() {
+            if first_token.eq(&"SF") {
+                if tokens.len() != 2 {
+                    panic!("Invalid SF format");
+                }
 
-            let file_path = tokens[1];
-            self.entry = Some(FileData::new(file_path));
-            return;
+                let file_path = tokens[1];
+                self.entry = Some(FileData::new(file_path));
+                return;
+            } else {
+                panic!("Invalid initial entry token: {}", first_token);
+            }
         }
 
         match *first_token {
