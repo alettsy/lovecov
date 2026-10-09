@@ -1,8 +1,9 @@
 use std::{env, fs};
 
-use crate::{entry_builder::EntryBuilder, files::FileTree, generator::Generator};
+use crate::{entry_builder::EntryBuilder, file_tree::FileTree, generator::Generator};
 
 mod entry_builder;
+mod file_tree;
 mod files;
 mod generator;
 
@@ -18,9 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Processing...\n");
 
     let mut tree = FileTree::new();
-
     let lines = contents.lines();
-
     let mut builder: Option<EntryBuilder> = None;
 
     for line in lines {
@@ -30,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             continue;
         }
 
-        let first_token = tokens.first().unwrap().clone();
+        let first_token = *tokens.first().expect("Expected token -- missing");
 
         if builder.is_none() {
             if first_token.eq("SF") {

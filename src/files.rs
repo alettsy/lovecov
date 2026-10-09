@@ -1,36 +1,4 @@
-use std::cmp;
-
-#[derive(Clone)]
-pub struct Line {
-    pub number: u32,
-    pub execute_count: u32,
-}
-
-impl Line {
-    pub fn new(number: u32, execute_count: u32) -> Self {
-        Self {
-            number,
-            execute_count,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct Function {
-    pub name: String,
-    pub line_start: u32,
-    pub execute_count: u32,
-}
-
-impl Function {
-    pub fn new(name: &str, line_start: u32) -> Self {
-        Self {
-            name: name.to_string(),
-            line_start,
-            execute_count: 0,
-        }
-    }
-}
+use std::{cmp, collections::HashMap};
 
 pub enum ItemType {
     File(FileData),
@@ -78,6 +46,45 @@ impl FileData {
     }
 
     pub fn merge_with(&self, other: &FileData) -> Self {
+        let mut lines_map: HashMap<u32, &Line> =
+            other.lines.iter().map(|item| (item.number, item)).collect();
+
+        let mut functions_map: HashMap<String, &Function> = other
+            .functions
+            .iter()
+            .map(|item| (item.name.clone(), item))
+            .collect();
+
+        let mut lines: Vec<Line> = self
+            .lines
+            .iter()
+            .map(|l| {
+                if let Some(matched) = lines_map.remove(&l.number) {
+                    l.merge_with(&matched)
+                } else {
+                    l.clone()
+                }
+            })
+            .collect();
+
+        let mut functions: Vec<Function> = self
+            .functions
+            .iter()
+            .map(|l| {
+                if let Some(matched) = functions_map.remove(&l.name) {
+                    l.merge_with(&matched)
+                } else {
+                    l.clone()
+                }
+            })
+            .collect();
+
+        lines_map.values().for_each(|&v| lines.push(v.clone()));
+
+        functions_map
+            .values()
+            .for_each(|&v| functions.push(v.clone()));
+
         Self {
             name: self.name.clone(),
             path: self.path.clone(),
@@ -85,8 +92,8 @@ impl FileData {
             function_hit_count: cmp::max(self.function_hit_count, other.function_hit_count),
             line_count: cmp::max(self.line_count, other.line_count),
             line_hit_count: cmp::max(self.line_hit_count, other.line_hit_count),
-            functions: vec![],
-            lines: vec![],
+            functions,
+            lines,
         }
     }
 }
@@ -100,75 +107,49 @@ impl FolderData {
     }
 }
 
-pub struct FileTree {
-    pub root: FolderData,
+#[derive(Clone)]
+pub struct Line {
+    pub number: u32,
+    pub execute_count: u32,
 }
 
-impl FileTree {
-    pub fn new() -> Self {
+impl Line {
+    pub fn new(number: u32, execute_count: u32) -> Self {
         Self {
-            root: FolderData::new("root"),
+            number,
+            execute_count,
         }
     }
 
-    pub fn add_file(&mut self, sf: FileData) {
-        Self::add_file_recursive(&mut self.root.items, sf.path.clone(), sf);
-    }
-
-    fn add_file_recursive(items: &mut Vec<ItemType>, mut path: Vec<String>, file: FileData) {
-        if path.is_empty() {
-            let file_index = items.iter().position(|f| match f {
-                ItemType::File(f) => file.name == f.name,
-                ItemType::Folder(_) => false,
-            });
-
-            if let Some(index) = file_index {
-                match &mut items[index] {
-                    ItemType::File(found_file) => {
-                        let merged_file = file.merge_with(found_file);
-                        items[index] = ItemType::File(merged_file);
-                    }
-                    ItemType::Folder(_) => panic!("Matched file points to folder"),
-                }
-            } else {
-                items.push(ItemType::File(file));
-            }
-
-            return;
-        }
-
-        let name = path.remove(0);
-
-        let folder_index = items.iter().position(|f| match f {
-            ItemType::File(_) => false,
-            ItemType::Folder(folder) => folder.name == name,
-        });
-
-        if folder_index.is_none() {
-            items.push(ItemType::Folder(FolderData::new(&name)));
-        }
-
-        let index = items
-            .iter()
-            .position(|f| match f {
-                ItemType::File(_) => false,
-                ItemType::Folder(folder) => folder.name == name,
-            })
-            .unwrap();
-
-        match &mut items[index] {
-            ItemType::Folder(folder) => {
-                Self::add_file_recursive(&mut folder.items, path, file);
-            }
-            ItemType::File(_) => panic!("Path matched with file, not folder. Bad SF"),
+    fn merge_with(&self, other: &Line) -> Self {
+        Self {
+            number: self.number,
+            execute_count: self.execute_count + other.execute_count,
         }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_add() {
-        assert_eq!(1 + 2, 3);
+#[derive(Clone)]
+pub struct Function {
+    pub name: String,
+    pub line_start: u32,
+    pub execute_count: u32,
+}
+
+impl Function {
+    pub fn new(name: &str, line_start: u32) -> Self {
+        Self {
+            name: name.to_string(),
+            line_start,
+            execute_count: 0,
+        }
+    }
+
+    fn merge_with(&self, other: &Function) -> Self {
+        Self {
+            name: self.name.clone(),
+            line_start: self.line_start,
+            execute_count: self.execute_count + other.execute_count,
+        }
     }
 }

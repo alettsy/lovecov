@@ -1,4 +1,7 @@
-use crate::files::{FileTree, FolderData};
+use crate::{
+    file_tree::FileTree,
+    files::{FolderData, ItemType},
+};
 
 pub enum Generator {
     Summary,
@@ -40,13 +43,13 @@ impl Generator {
     fn generate_summary(folder: &FolderData, summary: &mut SummaryOutput) {
         for item in &folder.items {
             match item {
-                crate::files::ItemType::File(file) => {
+                ItemType::File(file) => {
                     summary.line_total += file.line_count;
                     summary.line_hit_total += file.line_hit_count;
                     summary.function_total += file.function_count;
                     summary.function_hit_total += file.function_hit_count;
                 }
-                crate::files::ItemType::Folder(folder) => {
+                ItemType::Folder(folder) => {
                     Self::generate_summary(folder, summary);
                 }
             }
