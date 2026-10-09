@@ -1,0 +1,48 @@
+name: "🐛 Bug"
+description: "Something went wrong with the package"
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <h3>Thanks for reporting a bug!</h3>
+
+        Before starting to fill in the form, please check that:
+
+        - No related issue already exists for this bug
+        - No related PR already exists for this bug
+        - You have the steps necessary for others to reproduce this bug
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: "The bug"
+      description: "A clear, concise description of what the bug is."
+    validations:
+      required: true
+  - type: textarea
+    id: bug-steps
+    attributes:
+      label: "Steps to reproduce"
+      placeholder: |
+        1. Do this
+        2. Then do that
+        3. Boom, there's the bug
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: "Your environment"
+      value: |
+        - **Device**: [e.g. iPhone 13 pro max, desktop]
+        - **OS**: [e.g. iOS, Windows]
+        - **Browser**: [e.g. Opera, Chrome]
+        - **Version**: [e.g. 22.5.29]
+    validations:
+      required: true
+  - type: textarea
+    id: bug-context
+    attributes:
+      label: "Additional info"
+      description: "Add screenshots, videos, or any other supporting info here"

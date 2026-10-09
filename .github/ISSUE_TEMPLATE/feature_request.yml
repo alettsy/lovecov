@@ -1,0 +1,24 @@
+name: "💡 Feature"
+description: "Request a feature or improvement to be made"
+title: "[FEATURE]: "
+labels: ["feat"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <h3>Thanks for requesting a feature/improvement!</h3>
+
+        Before starting to fill in the form, please check that:
+
+        - No related issue already exists for this feature/improvement
+        - No related PR already exists for this feature/improvement
+  - type: textarea
+    attributes:
+      label: "Description"
+      description: "A clear, concise description of what you would like added/improved."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: "Additional info"
+      description: "Add screenshots, videos, or any other supporting info here"
