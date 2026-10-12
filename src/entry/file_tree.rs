@@ -1,4 +1,4 @@
-use crate::files::{FileData, FolderData, ItemType};
+use crate::entry::data::{FileData, FolderData, ItemType};
 
 pub struct FileTree {
     pub root: FolderData,

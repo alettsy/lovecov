@@ -1,4 +1,4 @@
-use crate::files::{FileData, Function, Line};
+use crate::entry::{data::FileData, parts::{Function, Line}};
 
 pub struct EntryBuilder {
     pub entry: Option<FileData>,
