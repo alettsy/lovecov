@@ -1,4 +1,10 @@
-use crate::entry::{data::FileData, parts::{Function, Line}};
+use crate::{
+    entry::{
+        data::FileData,
+        parts::{Function, Line},
+    },
+    errors::LovecovError,
+};
 
 pub struct EntryBuilder {
     pub entry: Option<FileData>,
@@ -13,112 +19,172 @@ impl EntryBuilder {
         }
     }
 
-    pub fn process_tokens(&mut self, tokens: Vec<&str>) {
+    pub fn process_tokens(
+        &mut self,
+        tokens: Vec<&str>,
+        line_number: usize,
+    ) -> Result<(), LovecovError> {
         let first_token = tokens.first().unwrap();
 
         if self.entry.is_none() {
             if first_token.eq(&"SF") {
                 if tokens.len() != 2 {
-                    panic!("Invalid SF format");
+                    return Err(LovecovError::TokenFormatError(
+                        line_number,
+                        "Invalid SF".into(),
+                    ));
                 }
 
                 let file_path = tokens[1];
                 self.entry = Some(FileData::new(file_path));
-                return;
+                return Ok(());
             } else {
-                panic!("Invalid initial entry token: {}", first_token);
+                return Err(LovecovError::TokenFormatError(
+                    line_number,
+                    format!("Invalid initial entry token '{}'", first_token),
+                ));
             }
         }
 
         match *first_token {
             "TN" => {
                 // NOTE: ignoring TN because it is not that important
+                Ok(())
             }
-            "SF" => panic!("Multiple SF entries found"),
-            "FN" => self.process_function_name(tokens),
-            "FNDA" => self.process_function_execute(tokens),
+            "SF" => Err(LovecovError::TokenFormatError(
+                line_number,
+                String::from("Repeated SF in entry"),
+            )),
+            "FN" => {
+                self.process_function_name(tokens)
+                    .map_err(|s| LovecovError::TokenFormatError(line_number, s))?;
+                Ok(())
+            }
+            "FNDA" => {
+                self.process_function_execute(tokens)
+                    .map_err(|s| LovecovError::TokenFormatError(line_number, s))?;
+                Ok(())
+            }
             "FNF" => {
-                let count = Self::extract_count(tokens).expect("Invalid FNF");
+                let count = Self::extract_count(tokens).map_err(|_| {
+                    LovecovError::TokenFormatError(line_number, "Invalid FNF".into())
+                })?;
 
                 if let Some(entry) = &mut self.entry {
                     entry.function_count += count;
                 }
+
+                Ok(())
             }
             "FNH" => {
-                let count = Self::extract_count(tokens).expect("Invalid FNH");
+                let count = Self::extract_count(tokens).map_err(|_| {
+                    LovecovError::TokenFormatError(line_number, "Invalid FNH".into())
+                })?;
 
                 if let Some(entry) = &mut self.entry {
                     entry.function_hit_count += count;
                 }
+
+                Ok(())
             }
-            "DA" => self.process_line_execute_count(tokens),
+            "DA" => {
+                self.process_line_execute_count(tokens)
+                    .map_err(|s| LovecovError::TokenFormatError(line_number, s))?;
+                Ok(())
+            }
             "LF" => {
-                let count = Self::extract_count(tokens).expect("Invalid LF");
+                let count = Self::extract_count(tokens).map_err(|_| {
+                    LovecovError::TokenFormatError(line_number, "Invalid LF".into())
+                })?;
 
                 if let Some(entry) = &mut self.entry {
                     entry.line_count += count;
                 }
+
+                Ok(())
             }
             "LH" => {
-                let count = Self::extract_count(tokens).expect("Invalid LH");
+                let count = Self::extract_count(tokens).map_err(|_| {
+                    LovecovError::TokenFormatError(line_number, "Invalid LH".into())
+                })?;
 
                 if let Some(entry) = &mut self.entry {
                     entry.line_hit_count += count;
                 }
+
+                Ok(())
             }
-            "end_of_record" => self.reached_end = true,
-            _ => println!("Skipping unknown token: {}", *first_token),
-        };
+            "end_of_record" => {
+                self.reached_end = true;
+                Ok(())
+            }
+            _ => {
+                println!("Skipping unknown token: {}", *first_token);
+                Ok(())
+            }
+        }
     }
 
-    fn process_line_execute_count(&mut self, tokens: Vec<&str>) {
-        let parts = Self::extract_two_parts(tokens).expect("Invalid DA format");
+    fn process_line_execute_count(&mut self, tokens: Vec<&str>) -> Result<(), String> {
+        let parts = Self::extract_two_parts(tokens).map_err(|_| String::from("Invalid DA"))?;
 
         let line_number: u32 = parts
             .first()
-            .expect("Line number missing in DA")
+            .ok_or(String::from("DA missing line number"))?
             .parse()
-            .expect("Line number invalid in DA");
+            .map_err(|_| String::from("DA line number invalid"))?;
 
-        let hit_count_str = parts.last().expect("Hit count missing in DA");
+        let hit_count_str = parts.last().ok_or(String::from("DA missing hit count"))?;
 
-        let hit_count = if hit_count_str.eq(&"-") {
+        let hit_count: u32 = if hit_count_str.eq(&"-") {
             1
         } else {
-            hit_count_str.parse().expect("Hit count invalid in DA")
+            hit_count_str
+                .parse()
+                .map_err(|_| String::from("Hit count invalid in DA"))?
         };
 
         if let Some(entry) = &mut self.entry {
             entry.lines.push(Line::new(line_number, hit_count));
         }
+
+        Ok(())
     }
 
-    fn process_function_name(&mut self, tokens: Vec<&str>) {
-        let parts = Self::extract_two_parts(tokens).expect("Invalid FN format");
+    fn process_function_name(&mut self, tokens: Vec<&str>) -> Result<(), String> {
+        let parts = Self::extract_two_parts(tokens).map_err(|_| String::from("Invalid FN"))?;
 
         let line_number: u32 = parts
             .first()
-            .expect("Line number missing in FN")
+            .ok_or(String::from("FN missing line number"))?
             .parse()
-            .expect("Line number invalid in FN");
-        let function_name = parts.last().expect("Function name missing in FN");
+            .map_err(|_| String::from("FN line number invalid"))?;
+
+        let function_name = parts
+            .last()
+            .ok_or(String::from("FN missing function name"))?;
 
         if let Some(entry) = &mut self.entry {
             entry
                 .functions
                 .push(Function::new(function_name, line_number));
         }
+
+        Ok(())
     }
 
-    fn process_function_execute(&mut self, tokens: Vec<&str>) {
-        let parts = Self::extract_two_parts(tokens).expect("Invalid FNDA format");
+    fn process_function_execute(&mut self, tokens: Vec<&str>) -> Result<(), String> {
+        let parts = Self::extract_two_parts(tokens).map_err(|_| String::from("Invalid FNDA"))?;
 
         let count: u32 = parts
             .first()
-            .expect("Count missing in FNDA")
+            .ok_or(String::from("FNDA missing count"))?
             .parse()
-            .expect("Count invalid in FNDA");
-        let function_name = parts.last().expect("Function name missing in FNDA");
+            .map_err(|_| String::from("FNDA count invalid"))?;
+
+        let function_name = parts
+            .last()
+            .ok_or(String::from("FNDA missing function name"))?;
 
         if let Some(entry) = &mut self.entry {
             let index_opt = entry
@@ -127,13 +193,15 @@ impl EntryBuilder {
                 .position(|f| f.name.eq(function_name));
 
             if index_opt.is_none() {
-                println!("FNDA function {} not found", function_name);
-                return;
+                eprintln!("FNDA function {} not found -- ignoring", function_name);
+                return Ok(());
             }
 
             let index = index_opt.unwrap();
             entry.functions[index].execute_count += count;
         }
+
+        Ok(())
     }
 
     fn extract_two_parts(tokens: Vec<&str>) -> Result<Vec<&str>, ()> {

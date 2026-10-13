@@ -1,6 +1,5 @@
 use crate::{
-    entry::file_tree::FileTree,
-    output::{OutputGenerator, html::HtmlOutput, summary::SummaryOutput},
+    entry::file_tree::FileTree, errors::LovecovError, output::{OutputGenerator, html::HtmlOutput, summary::SummaryOutput},
 };
 
 pub enum Generator {
@@ -9,11 +8,11 @@ pub enum Generator {
 }
 
 impl Generator {
-    pub fn from_str(name: &str) -> Self {
+    pub fn from_str(name: &str) -> Result<Self, LovecovError> {
         match name {
-            "summary" => Generator::Summary,
-            "html" => Generator::Html,
-            _ => panic!("Generator {} not recognised", name),
+            "summary" => Ok(Generator::Summary),
+            "html" => Ok(Generator::Html),
+            _ => Err(LovecovError::UsageError),
         }
     }
 
