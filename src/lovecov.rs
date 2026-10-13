@@ -17,8 +17,6 @@ pub struct Lovecov {
 
 impl Lovecov {
     pub fn from_args(args: Vec<String>) -> Result<Self, LovecovError> {
-        println!("Initializing...");
-
         let file_path = &args.get(1).ok_or(LovecovError::FileNotFoundError)?;
 
         let file = File::open(file_path).map_err(|_| LovecovError::FileReadError)?;
@@ -36,8 +34,6 @@ impl Lovecov {
     }
 
     pub fn run(&mut self) -> Result<(), LovecovError> {
-        println!("Processing...");
-
         let file = &mut self.file;
 
         for line in file.lines() {

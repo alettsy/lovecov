@@ -2,8 +2,8 @@ use std::env;
 
 use crate::{errors::LovecovError, lovecov::Lovecov};
 
-mod errors;
 mod entry;
+mod errors;
 mod lovecov;
 mod output;
 
@@ -12,8 +12,6 @@ fn main() -> Result<(), LovecovError> {
 
     let mut lovecov = Lovecov::from_args(args)?;
     lovecov.run()?;
-
-    println!("\nAll finished!");
 
     Ok(())
 }
