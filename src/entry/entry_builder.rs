@@ -118,10 +118,10 @@ impl EntryBuilder {
                 self.reached_end = true;
                 Ok(())
             }
-            _ => {
-                println!("Skipping unknown token: {}", *first_token);
-                Ok(())
-            }
+            _ => Err(LovecovError::UnknownToken(
+                line_number,
+                String::from(*first_token),
+            )),
         }
     }
 

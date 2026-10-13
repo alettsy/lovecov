@@ -7,6 +7,7 @@ pub enum LovecovError {
     UsageError,
     FileReadError,
     MissingToken(usize),
+    UnknownToken(usize, String),
     TokenFormatError(usize, String),
     TreeError(String),
 }
@@ -24,6 +25,9 @@ impl Display for LovecovError {
                 write!(f, "Token Format Error at line {}\n{}", line, message)
             }
             LovecovError::TreeError(message) => write!(f, "{}", message),
+            LovecovError::UnknownToken(line, token) => {
+                write!(f, "Unknown token '{}' at line {}", token, line)
+            }
         }
     }
 }
