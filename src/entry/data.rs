@@ -1,6 +1,9 @@
 use std::{cmp, collections::HashMap};
 
-use crate::entry::parts::{Function, Line};
+use crate::{
+    entry::parts::{Function, Line},
+    errors::LovecovError,
+};
 
 pub enum ItemType {
     File(FileData),
@@ -33,15 +36,20 @@ pub struct FileData {
 }
 
 impl FileData {
-    pub fn new(sf: &str) -> FileData {
+    pub fn new(sf: &str, line_number: usize) -> Result<FileData, LovecovError> {
         let sf_split: Vec<String> = sf
             .split(|c| c == '/' || c == '\\')
             .map(|s| s.to_string())
             .collect();
-        let name = sf_split.last().expect("Invalid SF file name").to_string();
+
+        let name = sf_split
+            .last()
+            .ok_or(LovecovError::TokenFormatError(line_number, "Invalid SF name".into()))?
+            .to_string();
+
         let path = &sf_split[..sf_split.len() - 1];
 
-        FileData {
+        Ok(FileData {
             name,
             path: path.to_vec(),
             function_count: 0,
@@ -50,7 +58,7 @@ impl FileData {
             line_count: 0,
             line_hit_count: 0,
             lines: vec![],
-        }
+        })
     }
 
     pub fn merge_with(&self, other: &FileData) -> Self {

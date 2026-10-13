@@ -36,7 +36,8 @@ impl EntryBuilder {
                 }
 
                 let file_path = tokens[1];
-                self.entry = Some(FileData::new(file_path));
+                let file_data = FileData::new(file_path, line_number)?;
+                self.entry = Some(file_data);
                 return Ok(());
             } else {
                 return Err(LovecovError::TokenFormatError(
