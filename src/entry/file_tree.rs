@@ -78,26 +78,17 @@ impl FileTree {
     }
 
     pub fn post_process(&mut self) {
-        for item in &mut self.root.items {
-            match item {
-                ItemType::File(file) => {
-                    self.root.function_count += file.function_count;
-                    self.root.function_hit_count += file.function_hit_count;
-                    self.root.line_count += file.line_count;
-                    self.root.line_hit_count += file.line_hit_count;
-                }
-                ItemType::Folder(folder) => {
-                    Self::post_process_recursive(folder);
-                    self.root.function_count += folder.function_count;
-                    self.root.function_hit_count += folder.function_hit_count;
-                    self.root.line_count += folder.line_count;
-                    self.root.line_hit_count += folder.line_hit_count;
-                }
-            }
-        }
+        Self::post_process_recursive(&mut self.root);
     }
 
     fn post_process_recursive(parent: &mut FolderData) {
+        parent.items.sort_by(|a, b| match (a, b) {
+            (ItemType::Folder(a_data), ItemType::Folder(b_data)) => a_data.name.cmp(&b_data.name),
+            (ItemType::File(a_data), ItemType::File(b_data)) => a_data.name.cmp(&b_data.name),
+            (ItemType::Folder(_), ItemType::File(_)) => std::cmp::Ordering::Less,
+            (ItemType::File(_), ItemType::Folder(_)) => std::cmp::Ordering::Greater,
+        });
+
         for item in &mut parent.items {
             match item {
                 ItemType::File(file) => {
