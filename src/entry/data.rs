@@ -10,6 +10,12 @@ pub enum ItemType {
 pub struct FolderData {
     pub name: String,
     pub items: Vec<ItemType>,
+
+    pub function_count: u32,
+    pub function_hit_count: u32,
+
+    pub line_count: u32,
+    pub line_hit_count: u32,
 }
 
 #[derive(Clone)]
@@ -105,8 +111,10 @@ impl FolderData {
         FolderData {
             name: name.to_string(),
             items: vec![],
+            function_count: 0,
+            function_hit_count: 0,
+            line_count: 0,
+            line_hit_count: 0,
         }
     }
 }
-
-

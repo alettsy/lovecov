@@ -65,6 +65,7 @@ impl Lovecov {
             }
         }
 
+        self.tree.post_process();
         self.output_generator.generate(&self.tree);
         Ok(())
     }

@@ -63,4 +63,44 @@ impl FileTree {
             ItemType::File(_) => panic!("Path matched with file, not folder. Bad SF"),
         }
     }
+
+    pub fn post_process(&mut self) {
+        for item in &mut self.root.items {
+            match item {
+                ItemType::File(file) => {
+                    self.root.function_count += file.function_count;
+                    self.root.function_hit_count += file.function_hit_count;
+                    self.root.line_count += file.line_count;
+                    self.root.line_hit_count += file.line_hit_count;
+                }
+                ItemType::Folder(folder) => {
+                    Self::post_process_recursive(folder);
+                    self.root.function_count += folder.function_count;
+                    self.root.function_hit_count += folder.function_hit_count;
+                    self.root.line_count += folder.line_count;
+                    self.root.line_hit_count += folder.line_hit_count;
+                }
+            }
+        }
+    }
+
+    fn post_process_recursive(parent: &mut FolderData) {
+        for item in &mut parent.items {
+            match item {
+                ItemType::File(file) => {
+                    parent.function_count += file.function_count;
+                    parent.function_hit_count += file.function_hit_count;
+                    parent.line_count += file.line_count;
+                    parent.line_hit_count += file.line_hit_count;
+                }
+                ItemType::Folder(folder) => {
+                    Self::post_process_recursive(folder);
+                    parent.function_count += folder.function_count;
+                    parent.function_hit_count += folder.function_hit_count;
+                    parent.line_count += folder.line_count;
+                    parent.line_hit_count += folder.line_hit_count;
+                }
+            }
+        }
+    }
 }
