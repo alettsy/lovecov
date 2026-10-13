@@ -10,6 +10,9 @@ pub const LINE_HIT_COUNT: &str = "lh";
 pub const END_OF_RECORD: &str = "end_of_record";
 
 pub const TOKEN_SPLIT: &str = ":";
+pub const DATA_SPLIT: &str = ",";
+pub const HIT_EMPTY: &str = "-";
 
+pub const ROOT_FOLDER_NAME: &str = "root";
 pub const DEFAULT_OUTPUT: &str = "summary";
 pub const HTML_FILE: &str = "coverage.html";

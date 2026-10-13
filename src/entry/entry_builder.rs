@@ -3,6 +3,7 @@ use crate::{
     entry::{
         data::FileData,
         parts::{Function, Line},
+        token::Token,
     },
     errors::LovecovError,
 };
@@ -22,58 +23,49 @@ impl EntryBuilder {
 
     pub fn process_tokens(
         &mut self,
-        tokens: Vec<&str>,
-        line_number: usize,
+        token: Token,
+        data: Option<&String>,
     ) -> Result<(), LovecovError> {
-        let first_token = tokens
-            .first()
-            .ok_or(LovecovError::MissingToken(line_number))?
-            .to_lowercase();
+        let data = if data.is_none() {
+            vec![]
+        } else {
+            data.unwrap().split(constants::DATA_SPLIT).collect()
+        };
 
         if self.entry.is_none() {
-            if first_token.eq(constants::SOURCE_FILE) {
-                if tokens.len() != 2 {
-                    return Err(LovecovError::TokenFormatError(
-                        line_number,
-                        "Invalid SF".into(),
-                    ));
+            if token == Token::SourceFile {
+                if data.len() != 1 {
+                    return Err(Token::SourceFile.into_err());
                 }
 
-                let file_path = tokens[1];
-                let file_data = FileData::new(file_path, line_number)?;
+                let file_path = data[0];
+                let file_data = FileData::new(file_path)?;
                 self.entry = Some(file_data);
                 return Ok(());
             } else {
-                return Err(LovecovError::TokenFormatError(
-                    line_number,
-                    format!("Invalid initial entry token '{}'", first_token),
-                ));
+                return Err(LovecovError::InvalidStartToken);
             }
         }
 
-        match first_token.as_str() {
-            constants::TEST_NAME => {
+        match token {
+            Token::TestName => {
                 // NOTE: ignoring TN because it is not that important
                 Ok(())
             }
-            constants::SOURCE_FILE => Err(LovecovError::TokenFormatError(
-                line_number,
-                "Repeated SF in entry".into(),
-            )),
-            constants::FUNC_NAME => {
-                self.process_function_name(tokens)
-                    .map_err(|s| LovecovError::TokenFormatError(line_number, s))?;
+            Token::SourceFile => Err(LovecovError::RepeatedSourceTokenError),
+            Token::FunctionName => {
+                self.process_function_name(data)
+                    .map_err(|_| Token::FunctionName.into_err())?;
                 Ok(())
             }
-            constants::FUN_EXEC_COUNT => {
-                self.process_function_execute(tokens)
-                    .map_err(|s| LovecovError::TokenFormatError(line_number, s))?;
+            Token::FunctionExecCount => {
+                self.process_function_execute(data)
+                    .map_err(|_| Token::FunctionExecCount.into_err())?;
                 Ok(())
             }
-            constants::FUNC_COUNT => {
-                let count = Self::extract_count(tokens).map_err(|_| {
-                    LovecovError::TokenFormatError(line_number, "Invalid FNF".into())
-                })?;
+            Token::FunctionCount => {
+                let count =
+                    Self::extract_count(data).map_err(|_| Token::FunctionCount.into_err())?;
 
                 if let Some(entry) = &mut self.entry {
                     entry.function_count += count;
@@ -81,10 +73,9 @@ impl EntryBuilder {
 
                 Ok(())
             }
-            constants::FUNC_HIT_COUNT => {
-                let count = Self::extract_count(tokens).map_err(|_| {
-                    LovecovError::TokenFormatError(line_number, "Invalid FNH".into())
-                })?;
+            Token::FunctionHitCount => {
+                let count =
+                    Self::extract_count(data).map_err(|_| Token::FunctionHitCount.into_err())?;
 
                 if let Some(entry) = &mut self.entry {
                     entry.function_hit_count += count;
@@ -92,15 +83,13 @@ impl EntryBuilder {
 
                 Ok(())
             }
-            constants::LINE_EXEC_COUNT => {
-                self.process_line_execute_count(tokens)
-                    .map_err(|s| LovecovError::TokenFormatError(line_number, s))?;
+            Token::LineExecCount => {
+                self.process_line_execute_count(data)
+                    .map_err(|_| Token::LineExecCount.into_err())?;
                 Ok(())
             }
-            constants::LINE_COUNT => {
-                let count = Self::extract_count(tokens).map_err(|_| {
-                    LovecovError::TokenFormatError(line_number, "Invalid LF".into())
-                })?;
+            Token::LineCount => {
+                let count = Self::extract_count(data).map_err(|_| Token::LineCount.into_err())?;
 
                 if let Some(entry) = &mut self.entry {
                     entry.line_count += count;
@@ -108,10 +97,9 @@ impl EntryBuilder {
 
                 Ok(())
             }
-            constants::LINE_HIT_COUNT => {
-                let count = Self::extract_count(tokens).map_err(|_| {
-                    LovecovError::TokenFormatError(line_number, "Invalid LH".into())
-                })?;
+            Token::LineHitCount => {
+                let count =
+                    Self::extract_count(data).map_err(|_| Token::LineHitCount.into_err())?;
 
                 if let Some(entry) = &mut self.entry {
                     entry.line_hit_count += count;
@@ -119,34 +107,24 @@ impl EntryBuilder {
 
                 Ok(())
             }
-            constants::END_OF_RECORD => {
+            Token::EndOfRecord => {
                 self.reached_end = true;
                 Ok(())
             }
-            _ => Err(LovecovError::UnknownToken(
-                line_number,
-                String::from(first_token),
-            )),
         }
     }
 
-    fn process_line_execute_count(&mut self, tokens: Vec<&str>) -> Result<(), String> {
-        let parts = Self::extract_two_parts(tokens).map_err(|_| String::from("Invalid DA"))?;
+    fn process_line_execute_count(&mut self, tokens: Vec<&str>) -> Result<(), ()> {
+        let parts = Self::extract_two_parts(tokens)?;
 
-        let line_number: u32 = parts
-            .first()
-            .ok_or(String::from("DA missing line number"))?
-            .parse()
-            .map_err(|_| String::from("DA line number invalid"))?;
+        let line_number: u32 = parts.first().ok_or(())?.parse().map_err(|_| ())?;
 
-        let hit_count_str = parts.last().ok_or(String::from("DA missing hit count"))?;
+        let hit_count_str = parts.last().ok_or(())?;
 
-        let hit_count: u32 = if hit_count_str.eq(&"-") {
+        let hit_count: u32 = if hit_count_str.eq(&constants::HIT_EMPTY) {
             1
         } else {
-            hit_count_str
-                .parse()
-                .map_err(|_| String::from("Hit count invalid in DA"))?
+            hit_count_str.parse().map_err(|_| ())?
         };
 
         if let Some(entry) = &mut self.entry {
@@ -156,21 +134,15 @@ impl EntryBuilder {
         Ok(())
     }
 
-    fn process_function_name(&mut self, tokens: Vec<&str>) -> Result<(), String> {
-        let parts = Self::extract_two_parts(tokens).map_err(|_| String::from("Invalid FN"))?;
+    fn process_function_name(&mut self, tokens: Vec<&str>) -> Result<(), ()> {
+        let parts = Self::extract_two_parts(tokens).map_err(|_| ())?;
 
-        let line_number: u32 = parts
-            .first()
-            .ok_or(String::from("FN missing line number"))?
-            .parse()
-            .map_err(|_| String::from("FN line number invalid"))?;
+        let line_number: u32 = parts.first().ok_or(())?.parse().map_err(|_| ())?;
 
-        let function_name = parts
-            .last()
-            .ok_or(String::from("FN missing function name"))?;
+        let function_name = parts.last().ok_or(())?;
 
         if function_name.is_empty() {
-            return Err(String::from("Invalid FN"));
+            return Err(());
         }
 
         if let Some(entry) = &mut self.entry {
@@ -182,21 +154,15 @@ impl EntryBuilder {
         Ok(())
     }
 
-    fn process_function_execute(&mut self, tokens: Vec<&str>) -> Result<(), String> {
-        let parts = Self::extract_two_parts(tokens).map_err(|_| String::from("Invalid FNDA"))?;
+    fn process_function_execute(&mut self, tokens: Vec<&str>) -> Result<(), ()> {
+        let parts = Self::extract_two_parts(tokens).map_err(|_| ())?;
 
-        let count: u32 = parts
-            .first()
-            .ok_or(String::from("FNDA missing count"))?
-            .parse()
-            .map_err(|_| String::from("FNDA count invalid"))?;
+        let count: u32 = parts.first().ok_or(())?.parse().map_err(|_| ())?;
 
-        let function_name = parts
-            .last()
-            .ok_or(String::from("FNDA missing function name"))?;
+        let function_name = parts.last().ok_or(())?;
 
         if function_name.is_empty() {
-            return Err(String::from("Invalid FN"));
+            return Err(());
         }
 
         if let Some(entry) = &mut self.entry {
@@ -217,26 +183,20 @@ impl EntryBuilder {
         Ok(())
     }
 
-    fn extract_two_parts(tokens: Vec<&str>) -> Result<Vec<&str>, ()> {
-        if tokens.len() != 2 {
+    fn extract_two_parts(data: Vec<&str>) -> Result<Vec<&str>, ()> {
+        if data.len() != 2 {
             return Err(());
         }
 
-        let parts: Vec<&str> = tokens.last().unwrap().split(",").collect();
-
-        if parts.len() != 2 {
-            return Err(());
-        }
-
-        Ok(parts)
+        Ok(data)
     }
 
     fn extract_count(tokens: Vec<&str>) -> Result<u32, ()> {
-        if tokens.len() != 2 {
+        if tokens.len() != 1 {
             return Err(());
         }
 
-        tokens.last().ok_or(())?.parse::<u32>().map_err(|_| ())
+        tokens.first().ok_or(())?.parse::<u32>().map_err(|_| ())
     }
 
     pub fn is_done(&self) -> bool {
@@ -251,30 +211,33 @@ mod tests {
     #[test]
     fn any_token_while_none_fails() {
         let mut entry = EntryBuilder::new();
-        let tokens = vec!["DA", "1,2"];
+        let token = Token::LineExecCount;
+        let data: Option<String> = Some("1,2".into());
 
-        let result = entry.process_tokens(tokens, 4);
+        let result = entry.process_tokens(token, data.as_ref());
         assert!(result.is_err());
     }
 
     #[test]
     fn sf_starts_entry() {
         let mut entry = EntryBuilder::new();
-        let tokens = vec!["SF", "/home/project/file.txt"];
+        let token = Token::SourceFile;
+        let data: Option<String> = Some("/home/projects/file.txt".into());
 
-        let result = entry.process_tokens(tokens, 4);
+        let result = entry.process_tokens(token, data.as_ref());
         assert!(result.is_ok());
         assert!(entry.entry.is_some());
     }
 
     #[test]
     fn sf_invalid() {
-        let cases = vec![vec!["SF"], vec!["SF", ""]];
+        let token = Token::SourceFile;
+        let cases: Vec<Option<String>> = vec![None, Some("".into())];
 
         let mut entry = EntryBuilder::new();
 
         for case in cases {
-            let result = entry.process_tokens(case, 4);
+            let result = entry.process_tokens(token.clone(), case.as_ref());
             assert!(result.is_err());
         }
     }
@@ -282,31 +245,36 @@ mod tests {
     #[test]
     fn fn_valid() {
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
 
-        let tokens = vec!["FN", "1,function1"];
+        let token = Token::FunctionName;
+        let data: Option<String> = Some("1,function1".into());
 
-        let result = entry.process_tokens(tokens, 4);
+        let result = entry.process_tokens(token, data.as_ref());
         assert!(result.is_ok());
     }
 
     #[test]
     fn fn_invalid_cases() {
-        let cases = vec![
-            vec!["FN"],
-            vec!["FN", ""],
-            vec!["FN", "1,"],
-            vec!["FN", ",function1"],
-            vec!["FN", "A,function1"],
+        let cases: Vec<Option<String>> = vec![
+            None,
+            Some("".into()),
+            Some("1,".into()),
+            Some(",function1".into()),
+            Some("A,function1".into()),
         ];
 
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
+
+        let token = Token::FunctionName;
 
         for case in cases {
-            let result = entry.process_tokens(case, 4);
+            let result = entry.process_tokens(token.clone(), case.as_ref());
             assert!(result.is_err());
         }
     }
@@ -314,31 +282,36 @@ mod tests {
     #[test]
     fn fnda_valid() {
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
 
-        let tokens = vec!["FNDA", "1,function1"];
+        let token = Token::FunctionName;
+        let data: Option<String> = Some("1,function1".into());
 
-        let result = entry.process_tokens(tokens, 4);
+        let result = entry.process_tokens(token, data.as_ref());
         assert!(result.is_ok());
     }
 
     #[test]
     fn fnda_invalid_cases() {
-        let cases = vec![
-            vec!["FNDA"],
-            vec!["FNDA", ""],
-            vec!["FNDA", "1,"],
-            vec!["FNDA", ",function1"],
-            vec!["FNDA", "A,function1"],
+        let cases: Vec<Option<String>> = vec![
+            None,
+            Some("".into()),
+            Some("1,".into()),
+            Some(",function1".into()),
+            Some("A,function1".into()),
         ];
 
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
+
+        let token = Token::FunctionExecCount;
 
         for case in cases {
-            let result = entry.process_tokens(case, 4);
+            let result = entry.process_tokens(token.clone(), case.as_ref());
             assert!(result.is_err());
         }
     }
@@ -346,25 +319,30 @@ mod tests {
     #[test]
     fn fnf_valid() {
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
 
-        let tokens = vec!["FNF", "34"];
+        let token = Token::FunctionCount;
+        let data: Option<String> = Some("34".into());
 
-        let result = entry.process_tokens(tokens, 4);
+        let result = entry.process_tokens(token, data.as_ref());
         assert!(result.is_ok());
     }
 
     #[test]
     fn fnf_invalid_cases() {
-        let cases = vec![vec!["FNF"], vec!["FNF", ""], vec!["FNF", "A"]];
+        let cases: Vec<Option<String>> = vec![None, Some("".into()), Some("A".into())];
 
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
+
+        let token = Token::FunctionCount;
 
         for case in cases {
-            let result = entry.process_tokens(case, 4);
+            let result = entry.process_tokens(token.clone(), case.as_ref());
             assert!(result.is_err());
         }
     }
@@ -372,25 +350,30 @@ mod tests {
     #[test]
     fn fnh_valid() {
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
 
-        let tokens = vec!["FNH", "34"];
+        let token = Token::FunctionHitCount;
+        let data: Option<String> = Some("23".into());
 
-        let result = entry.process_tokens(tokens, 4);
+        let result = entry.process_tokens(token, data.as_ref());
         assert!(result.is_ok());
     }
 
     #[test]
     fn fnh_invalid_cases() {
-        let cases = vec![vec!["FNH"], vec!["FNH", ""], vec!["FNH", "A"]];
+        let cases: Vec<Option<String>> = vec![None, Some("".into()), Some("A".into())];
 
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
+
+        let token = Token::FunctionHitCount;
 
         for case in cases {
-            let result = entry.process_tokens(case, 4);
+            let result = entry.process_tokens(token.clone(), case.as_ref());
             assert!(result.is_err());
         }
     }
@@ -398,30 +381,35 @@ mod tests {
     #[test]
     fn da_valid() {
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
 
-        let tokens = vec!["DA", "3,4"];
+        let token = Token::LineExecCount;
+        let data: Option<String> = Some("3,4".into());
 
-        let result = entry.process_tokens(tokens, 4);
+        let result = entry.process_tokens(token, data.as_ref());
         assert!(result.is_ok());
     }
 
     #[test]
     fn da_invalid_cases() {
-        let cases = vec![
-            vec!["DA"],
-            vec!["DA", ""],
-            vec!["DA", "A,3"],
-            vec!["DA", "3,A"],
+        let cases: Vec<Option<String>> = vec![
+            None,
+            Some("".into()),
+            Some("A,3".into()),
+            Some("3,A".into()),
         ];
 
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
+
+        let token = Token::LineExecCount;
 
         for case in cases {
-            let result = entry.process_tokens(case, 4);
+            let result = entry.process_tokens(token.clone(), case.as_ref());
             assert!(result.is_err());
         }
     }
@@ -429,25 +417,30 @@ mod tests {
     #[test]
     fn lf_valid() {
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
 
-        let tokens = vec!["LF", "34"];
+        let token = Token::LineCount;
+        let data: Option<String> = Some("34".into());
 
-        let result = entry.process_tokens(tokens, 4);
+        let result = entry.process_tokens(token, data.as_ref());
         assert!(result.is_ok());
     }
 
     #[test]
     fn lf_invalid_cases() {
-        let cases = vec![vec!["LF"], vec!["LF", ""], vec!["LF", "A"]];
+        let cases: Vec<Option<String>> = vec![None, Some("".into()), Some("A".into())];
 
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
+
+        let token = Token::LineCount;
 
         for case in cases {
-            let result = entry.process_tokens(case, 4);
+            let result = entry.process_tokens(token.clone(), case.as_ref());
             assert!(result.is_err());
         }
     }
@@ -455,25 +448,30 @@ mod tests {
     #[test]
     fn lh_valid() {
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
 
-        let tokens = vec!["LH", "34"];
+        let token = Token::LineHitCount;
+        let data: Option<String> = Some("22".into());
 
-        let result = entry.process_tokens(tokens, 4);
+        let result = entry.process_tokens(token, data.as_ref());
         assert!(result.is_ok());
     }
 
     #[test]
     fn lh_invalid_cases() {
-        let cases = vec![vec!["LH"], vec!["LH", ""], vec!["LH", "A"]];
+        let cases: Vec<Option<String>> = vec![None, Some("".into()), Some("A".into())];
 
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
+
+        let token = Token::LineHitCount;
 
         for case in cases {
-            let result = entry.process_tokens(case, 4);
+            let result = entry.process_tokens(token.clone(), case.as_ref());
             assert!(result.is_err());
         }
     }
@@ -481,25 +479,14 @@ mod tests {
     #[test]
     fn end_of_record() {
         let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
+        let sf_token = Token::SourceFile;
+        let sf_data: Option<String> = Some("/home/projects/file.txt".into());
+        entry.process_tokens(sf_token, sf_data.as_ref()).unwrap();
 
-        let tokens = vec!["end_of_record"];
+        let token = Token::EndOfRecord;
+        let data: Option<String> = None;
 
-        let result = entry.process_tokens(tokens, 4);
+        let result = entry.process_tokens(token, data.as_ref());
         assert!(result.is_ok());
-        assert!(entry.is_done());
-    }
-
-    #[test]
-    fn invalid_token_fails() {
-        let mut entry = EntryBuilder::new();
-        let sf_tokens = vec!["SF", "file.txt"];
-        entry.process_tokens(sf_tokens, 0).unwrap();
-
-        let tokens = vec!["ZAF"];
-
-        let result = entry.process_tokens(tokens, 4);
-        assert!(result.is_err());
     }
 }

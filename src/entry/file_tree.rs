@@ -1,4 +1,5 @@
 use crate::{
+    constants,
     entry::data::{FileData, FolderData, ItemType},
     errors::LovecovError,
 };
@@ -10,7 +11,7 @@ pub struct FileTree {
 impl FileTree {
     pub fn new() -> Self {
         Self {
-            root: FolderData::new("root"),
+            root: FolderData::new(constants::ROOT_FOLDER_NAME),
         }
     }
 

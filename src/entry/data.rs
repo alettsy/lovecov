@@ -1,7 +1,10 @@
 use std::{cmp, collections::HashMap};
 
 use crate::{
-    entry::parts::{Function, Line},
+    entry::{
+        parts::{Function, Line},
+        token::Token,
+    },
     errors::LovecovError,
 };
 
@@ -36,7 +39,7 @@ pub struct FileData {
 }
 
 impl FileData {
-    pub fn new(sf: &str, line_number: usize) -> Result<FileData, LovecovError> {
+    pub fn new(sf: &str) -> Result<FileData, LovecovError> {
         let sf_split: Vec<String> = sf
             .split(|c| c == '/' || c == '\\')
             .map(|s| s.to_string())
@@ -44,17 +47,11 @@ impl FileData {
 
         let name = sf_split
             .last()
-            .ok_or(LovecovError::TokenFormatError(
-                line_number,
-                "Invalid SF name".into(),
-            ))?
+            .ok_or(Token::SourceFile.into_err())?
             .to_string();
 
         if name.is_empty() {
-            return Err(LovecovError::TokenFormatError(
-                line_number,
-                "SF name is empty".into(),
-            ));
+            return Err(Token::SourceFile.into_err());
         }
 
         let path = &sf_split[..sf_split.len() - 1];
@@ -144,7 +141,7 @@ mod tests {
     #[test]
     fn empty_sf_fails() {
         let sf = "";
-        let file_data = FileData::new(sf, 3);
+        let file_data = FileData::new(sf);
 
         assert!(file_data.is_err());
     }
@@ -152,7 +149,7 @@ mod tests {
     #[test]
     fn simple_sf_passes() {
         let sf = "file.txt";
-        let file_data = FileData::new(sf, 3);
+        let file_data = FileData::new(sf);
 
         assert!(file_data.is_ok());
     }
@@ -160,15 +157,15 @@ mod tests {
     #[test]
     fn deep_sf_passes() {
         let sf = "/home/project/file.txt";
-        let file_data = FileData::new(sf, 3);
+        let file_data = FileData::new(sf);
 
         assert!(file_data.is_ok());
     }
 
     #[test]
     fn empty_files_merge() {
-        let file_data_1 = FileData::new("/home/project/file.txt", 3).unwrap();
-        let file_data_2 = FileData::new("/home/project/file.txt", 27).unwrap();
+        let file_data_1 = FileData::new("/home/project/file.txt").unwrap();
+        let file_data_2 = FileData::new("/home/project/file.txt").unwrap();
 
         let merged = file_data_1.merge_with(&file_data_2);
 

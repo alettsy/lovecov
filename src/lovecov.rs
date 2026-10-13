@@ -1,11 +1,12 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader},
+    str::FromStr,
 };
 
 use crate::{
     constants,
-    entry::{entry_builder::EntryBuilder, file_tree::FileTree},
+    entry::{entry_builder::EntryBuilder, file_tree::FileTree, row::Row, token::Token},
     errors::LovecovError,
     output::generator::Generator,
 };
@@ -49,30 +50,19 @@ impl<R: BufRead> Lovecov<R> {
 
         for (i, line) in file.lines().enumerate() {
             let line_number = i + 1;
-            let line = line
-                .map_err(|_| LovecovError::FileReadError)?
-                .clone()
-                .to_lowercase();
-            let tokens: Vec<&str> = line.split(constants::TOKEN_SPLIT).collect();
+            let line = line.map_err(|_| LovecovError::FileReadError)?;
 
-            if tokens.is_empty() {
-                continue;
-            }
+            let row = Row::from_str(&line)
+                .map_err(|e| LovecovError::ErrorAtLine(line_number, Box::new(e)))?;
 
-            let first_token = tokens
-                .first()
-                .copied()
-                .ok_or(LovecovError::MissingToken(line_number))?;
-
-            if self.current_entry.is_none() {
-                if first_token.eq(constants::SOURCE_FILE) {
-                    self.current_entry = Some(EntryBuilder::new());
-                }
+            if self.current_entry.is_none() && row.token == Token::SourceFile {
+                self.current_entry = Some(EntryBuilder::new());
             }
 
             if let Some(ref mut g) = self.current_entry {
                 if !g.is_done() {
-                    g.process_tokens(tokens, line_number)?;
+                    g.process_tokens(row.token, row.data.as_ref())
+                        .map_err(|e| LovecovError::ErrorAtLine(line_number, Box::new(e)))?;
                 }
 
                 if g.is_done() {
