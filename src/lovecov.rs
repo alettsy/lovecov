@@ -4,7 +4,9 @@ use std::{
 };
 
 use crate::{
-    entry::entry_builder::EntryBuilder, entry::file_tree::FileTree, errors::LovecovError,
+    constants,
+    entry::{entry_builder::EntryBuilder, file_tree::FileTree},
+    errors::LovecovError,
     output::generator::Generator,
 };
 
@@ -28,7 +30,10 @@ impl Lovecov<BufReader<File>> {
 
 impl<R: BufRead> Lovecov<R> {
     fn from_reader(args: Vec<String>, reader: R) -> Result<Self, LovecovError> {
-        let generator_name = args.get(2).map(|s| s.as_str()).unwrap_or("summary");
+        let generator_name = args
+            .get(2)
+            .map(|s| s.as_str())
+            .unwrap_or(constants::DEFAULT_OUTPUT);
         let generator = Generator::from_str(generator_name)?;
 
         Ok(Self {
@@ -44,8 +49,11 @@ impl<R: BufRead> Lovecov<R> {
 
         for (i, line) in file.lines().enumerate() {
             let line_number = i + 1;
-            let line = line.map_err(|_| LovecovError::FileReadError)?;
-            let tokens: Vec<&str> = line.split(":").collect();
+            let line = line
+                .map_err(|_| LovecovError::FileReadError)?
+                .clone()
+                .to_lowercase();
+            let tokens: Vec<&str> = line.split(constants::TOKEN_SPLIT).collect();
 
             if tokens.is_empty() {
                 continue;
@@ -57,7 +65,7 @@ impl<R: BufRead> Lovecov<R> {
                 .ok_or(LovecovError::MissingToken(line_number))?;
 
             if self.current_entry.is_none() {
-                if first_token.eq("SF") {
+                if first_token.eq(constants::SOURCE_FILE) {
                     self.current_entry = Some(EntryBuilder::new());
                 }
             }

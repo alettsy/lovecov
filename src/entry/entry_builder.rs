@@ -1,4 +1,5 @@
 use crate::{
+    constants,
     entry::{
         data::FileData,
         parts::{Function, Line},
@@ -26,10 +27,11 @@ impl EntryBuilder {
     ) -> Result<(), LovecovError> {
         let first_token = tokens
             .first()
-            .ok_or(LovecovError::MissingToken(line_number))?;
+            .ok_or(LovecovError::MissingToken(line_number))?
+            .to_lowercase();
 
         if self.entry.is_none() {
-            if first_token.eq(&"SF") {
+            if first_token.eq(constants::SOURCE_FILE) {
                 if tokens.len() != 2 {
                     return Err(LovecovError::TokenFormatError(
                         line_number,
@@ -49,26 +51,26 @@ impl EntryBuilder {
             }
         }
 
-        match *first_token {
-            "TN" => {
+        match first_token.as_str() {
+            constants::TEST_NAME => {
                 // NOTE: ignoring TN because it is not that important
                 Ok(())
             }
-            "SF" => Err(LovecovError::TokenFormatError(
+            constants::SOURCE_FILE => Err(LovecovError::TokenFormatError(
                 line_number,
                 "Repeated SF in entry".into(),
             )),
-            "FN" => {
+            constants::FUNC_NAME => {
                 self.process_function_name(tokens)
                     .map_err(|s| LovecovError::TokenFormatError(line_number, s))?;
                 Ok(())
             }
-            "FNDA" => {
+            constants::FUN_EXEC_COUNT => {
                 self.process_function_execute(tokens)
                     .map_err(|s| LovecovError::TokenFormatError(line_number, s))?;
                 Ok(())
             }
-            "FNF" => {
+            constants::FUNC_COUNT => {
                 let count = Self::extract_count(tokens).map_err(|_| {
                     LovecovError::TokenFormatError(line_number, "Invalid FNF".into())
                 })?;
@@ -79,7 +81,7 @@ impl EntryBuilder {
 
                 Ok(())
             }
-            "FNH" => {
+            constants::FUNC_HIT_COUNT => {
                 let count = Self::extract_count(tokens).map_err(|_| {
                     LovecovError::TokenFormatError(line_number, "Invalid FNH".into())
                 })?;
@@ -90,12 +92,12 @@ impl EntryBuilder {
 
                 Ok(())
             }
-            "DA" => {
+            constants::LINE_EXEC_COUNT => {
                 self.process_line_execute_count(tokens)
                     .map_err(|s| LovecovError::TokenFormatError(line_number, s))?;
                 Ok(())
             }
-            "LF" => {
+            constants::LINE_COUNT => {
                 let count = Self::extract_count(tokens).map_err(|_| {
                     LovecovError::TokenFormatError(line_number, "Invalid LF".into())
                 })?;
@@ -106,7 +108,7 @@ impl EntryBuilder {
 
                 Ok(())
             }
-            "LH" => {
+            constants::LINE_HIT_COUNT => {
                 let count = Self::extract_count(tokens).map_err(|_| {
                     LovecovError::TokenFormatError(line_number, "Invalid LH".into())
                 })?;
@@ -117,13 +119,13 @@ impl EntryBuilder {
 
                 Ok(())
             }
-            "end_of_record" => {
+            constants::END_OF_RECORD => {
                 self.reached_end = true;
                 Ok(())
             }
             _ => Err(LovecovError::UnknownToken(
                 line_number,
-                String::from(*first_token),
+                String::from(first_token),
             )),
         }
     }

@@ -2,6 +2,7 @@ use std::fmt::Write;
 use std::fs;
 
 use crate::{
+    constants,
     entry::{
         data::{FolderData, ItemType},
         file_tree::FileTree,
@@ -16,7 +17,7 @@ impl OutputGenerator for HtmlOutput {
         let mut output = String::from(HTML_TEMPLATE_START);
         Self::generate_html(&tree.root, &mut output);
         output.push_str(HTML_TEMPLATE_END);
-        fs::write("coverage.html", output).unwrap();
+        fs::write(constants::HTML_FILE, output).unwrap();
     }
 }
 
