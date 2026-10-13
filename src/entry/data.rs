@@ -44,8 +44,18 @@ impl FileData {
 
         let name = sf_split
             .last()
-            .ok_or(LovecovError::TokenFormatError(line_number, "Invalid SF name".into()))?
+            .ok_or(LovecovError::TokenFormatError(
+                line_number,
+                "Invalid SF name".into(),
+            ))?
             .to_string();
+
+        if name.is_empty() {
+            return Err(LovecovError::TokenFormatError(
+                line_number,
+                "SF name is empty".into(),
+            ));
+        }
 
         let path = &sf_split[..sf_split.len() - 1];
 
@@ -124,5 +134,116 @@ impl FolderData {
             line_count: 0,
             line_hit_count: 0,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_sf_fails() {
+        let sf = "";
+        let file_data = FileData::new(sf, 3);
+
+        assert!(file_data.is_err());
+    }
+
+    #[test]
+    fn simple_sf_passes() {
+        let sf = "file.txt";
+        let file_data = FileData::new(sf, 3);
+
+        assert!(file_data.is_ok());
+    }
+
+    #[test]
+    fn deep_sf_passes() {
+        let sf = "/home/project/file.txt";
+        let file_data = FileData::new(sf, 3);
+
+        assert!(file_data.is_ok());
+    }
+
+    #[test]
+    fn empty_files_merge() {
+        let file_data_1 = FileData::new("/home/project/file.txt", 3).unwrap();
+        let file_data_2 = FileData::new("/home/project/file.txt", 27).unwrap();
+
+        let merged = file_data_1.merge_with(&file_data_2);
+
+        assert!(merged.function_count == 0);
+        assert!(merged.function_hit_count == 0);
+        assert!(merged.line_count == 0);
+        assert!(merged.line_hit_count == 0);
+        assert!(merged.functions.len() == 0);
+        assert!(merged.lines.len() == 0);
+    }
+
+    #[test]
+    fn populated_files_merge() {
+        let file_data_1 = FileData {
+            name: "file1.txt".into(),
+            path: vec!["home".into(), "project".into()],
+            function_count: 10,
+            function_hit_count: 5,
+            line_count: 344,
+            line_hit_count: 245,
+            functions: vec![
+                Function {
+                    name: "function1".into(),
+                    line_start: 22,
+                    execute_count: 3,
+                },
+                Function {
+                    name: "function2".into(),
+                    line_start: 29,
+                    execute_count: 1,
+                },
+            ],
+            lines: vec![Line::new(12, 5), Line::new(44, 2)],
+        };
+
+        let file_data_2 = FileData {
+            name: "file1.txt".into(),
+            path: vec!["home".into(), "project".into()],
+            function_count: 22,
+            function_hit_count: 2,
+            line_count: 330,
+            line_hit_count: 285,
+            functions: vec![Function {
+                name: "function2".into(),
+                line_start: 29,
+                execute_count: 10,
+            }],
+            lines: vec![Line::new(12, 8)],
+        };
+
+        let merged = file_data_1.merge_with(&file_data_2);
+
+        assert!(merged.function_count == 22);
+        assert!(merged.function_hit_count == 5);
+        assert!(merged.line_count == 344);
+        assert!(merged.line_hit_count == 285);
+        assert!(merged.functions.len() == 2);
+        assert!(merged.lines.len() == 2);
+
+        let first_line = merged.lines.first().unwrap();
+        assert!(first_line.number == 12);
+        assert!(first_line.execute_count == 13);
+
+        let last_line = merged.lines.last().unwrap();
+        assert!(last_line.number == 44);
+        assert!(last_line.execute_count == 2);
+
+        let first_function = merged.functions.first().unwrap();
+        assert!(first_function.name == "function1");
+        assert!(first_function.line_start == 22);
+        assert!(first_function.execute_count == 3);
+
+        let last_function = merged.functions.last().unwrap();
+        assert!(last_function.name == "function2");
+        assert!(last_function.line_start == 29);
+        assert!(last_function.execute_count == 11);
     }
 }

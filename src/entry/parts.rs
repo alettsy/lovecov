@@ -44,3 +44,63 @@ impl Function {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn merge_empty_functions() {
+        let function1 = Function::new("function1", 3);
+        let function2 = Function::new("function1", 3);
+
+        let merged = function1.merge_with(&function2);
+
+        assert!(merged.name == "function1");
+        assert!(merged.line_start == 3);
+        assert!(merged.execute_count == 0);
+    }
+
+    #[test]
+    fn merge_populated_functions() {
+        let function1 = Function {
+            name: "function1".into(),
+            line_start: 22,
+            execute_count: 3,
+        };
+
+        let function2 = Function {
+            name: "function1".into(),
+            line_start: 22,
+            execute_count: 7,
+        };
+
+        let merged = function1.merge_with(&function2);
+
+        assert!(merged.name == "function1");
+        assert!(merged.line_start == 22);
+        assert!(merged.execute_count == 10);
+    }
+
+    #[test]
+    fn merge_empty_lines() {
+        let line1 = Line::new(10, 0);
+        let line2 = Line::new(10, 0);
+
+        let merged = line1.merge_with(&line2);
+
+        assert!(merged.number == 10);
+        assert!(merged.execute_count == 0);
+    }
+
+    #[test]
+    fn merge_populated_lines() {
+        let line1 = Line::new(10, 3);
+        let line2 = Line::new(10, 7);
+
+        let merged = line1.merge_with(&line2);
+
+        assert!(merged.number == 10);
+        assert!(merged.execute_count == 10);
+    }
+}

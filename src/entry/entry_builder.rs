@@ -56,7 +56,7 @@ impl EntryBuilder {
             }
             "SF" => Err(LovecovError::TokenFormatError(
                 line_number,
-                String::from("Repeated SF in entry"),
+                "Repeated SF in entry".into(),
             )),
             "FN" => {
                 self.process_function_name(tokens)
@@ -167,6 +167,10 @@ impl EntryBuilder {
             .last()
             .ok_or(String::from("FN missing function name"))?;
 
+        if function_name.is_empty() {
+            return Err(String::from("Invalid FN"));
+        }
+
         if let Some(entry) = &mut self.entry {
             entry
                 .functions
@@ -188,6 +192,10 @@ impl EntryBuilder {
         let function_name = parts
             .last()
             .ok_or(String::from("FNDA missing function name"))?;
+
+        if function_name.is_empty() {
+            return Err(String::from("Invalid FN"));
+        }
 
         if let Some(entry) = &mut self.entry {
             let index_opt = entry
@@ -231,5 +239,265 @@ impl EntryBuilder {
 
     pub fn is_done(&self) -> bool {
         self.reached_end
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn any_token_while_none_fails() {
+        let mut entry = EntryBuilder::new();
+        let tokens = vec!["DA", "1,2"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn sf_starts_entry() {
+        let mut entry = EntryBuilder::new();
+        let tokens = vec!["SF", "/home/project/file.txt"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_ok());
+        assert!(entry.entry.is_some());
+    }
+
+    #[test]
+    fn sf_invalid() {
+        let cases = vec![vec!["SF"], vec!["SF", ""]];
+
+        let mut entry = EntryBuilder::new();
+
+        for case in cases {
+            let result = entry.process_tokens(case, 4);
+            assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn fn_valid() {
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        let tokens = vec!["FN", "1,function1"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn fn_invalid_cases() {
+        let cases = vec![
+            vec!["FN"],
+            vec!["FN", ""],
+            vec!["FN", "1,"],
+            vec!["FN", ",function1"],
+            vec!["FN", "A,function1"],
+        ];
+
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        for case in cases {
+            let result = entry.process_tokens(case, 4);
+            assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn fnda_valid() {
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        let tokens = vec!["FNDA", "1,function1"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn fnda_invalid_cases() {
+        let cases = vec![
+            vec!["FNDA"],
+            vec!["FNDA", ""],
+            vec!["FNDA", "1,"],
+            vec!["FNDA", ",function1"],
+            vec!["FNDA", "A,function1"],
+        ];
+
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        for case in cases {
+            let result = entry.process_tokens(case, 4);
+            assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn fnf_valid() {
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        let tokens = vec!["FNF", "34"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn fnf_invalid_cases() {
+        let cases = vec![vec!["FNF"], vec!["FNF", ""], vec!["FNF", "A"]];
+
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        for case in cases {
+            let result = entry.process_tokens(case, 4);
+            assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn fnh_valid() {
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        let tokens = vec!["FNH", "34"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn fnh_invalid_cases() {
+        let cases = vec![vec!["FNH"], vec!["FNH", ""], vec!["FNH", "A"]];
+
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        for case in cases {
+            let result = entry.process_tokens(case, 4);
+            assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn da_valid() {
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        let tokens = vec!["DA", "3,4"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn da_invalid_cases() {
+        let cases = vec![
+            vec!["DA"],
+            vec!["DA", ""],
+            vec!["DA", "A,3"],
+            vec!["DA", "3,A"],
+        ];
+
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        for case in cases {
+            let result = entry.process_tokens(case, 4);
+            assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn lf_valid() {
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        let tokens = vec!["LF", "34"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn lf_invalid_cases() {
+        let cases = vec![vec!["LF"], vec!["LF", ""], vec!["LF", "A"]];
+
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        for case in cases {
+            let result = entry.process_tokens(case, 4);
+            assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn lh_valid() {
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        let tokens = vec!["LH", "34"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn lh_invalid_cases() {
+        let cases = vec![vec!["LH"], vec!["LH", ""], vec!["LH", "A"]];
+
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        for case in cases {
+            let result = entry.process_tokens(case, 4);
+            assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn end_of_record() {
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        let tokens = vec!["end_of_record"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_ok());
+        assert!(entry.is_done());
+    }
+
+    #[test]
+    fn invalid_token_fails() {
+        let mut entry = EntryBuilder::new();
+        let sf_tokens = vec!["SF", "file.txt"];
+        entry.process_tokens(sf_tokens, 0).unwrap();
+
+        let tokens = vec!["ZAF"];
+
+        let result = entry.process_tokens(tokens, 4);
+        assert!(result.is_err());
     }
 }

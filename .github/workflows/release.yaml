@@ -16,6 +16,9 @@ jobs:
       - name: Verify binary builds
         run: cargo build --release
 
+      - name: Run tests
+        run: cargo test
+
       - name: Publish to crates.io
         run: cargo publish
         env:
