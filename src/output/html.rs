@@ -13,7 +13,7 @@ pub struct HtmlOutput;
 
 impl OutputGenerator for HtmlOutput {
     fn generate(tree: &FileTree) {
-        let mut output = String::from(HTML_TEMPLATE);
+        let mut output = String::from(HTML_TEMPLATE_START);
         Self::generate_html(&tree.root, &mut output);
         output.push_str(HTML_TEMPLATE_END);
         fs::write("coverage.html", output).unwrap();
@@ -25,74 +25,26 @@ impl HtmlOutput {
         for item in &folder.items {
             match item {
                 ItemType::File(file) => {
-                    let line_percentage: f32 =
-                        (file.line_hit_count as f32 / file.line_count as f32) * 100.0;
-
-                    let function_percentage: f32 =
-                        (file.function_hit_count as f32 / file.function_count as f32) * 100.0;
-
                     writeln!(output, r#"<div class="file row">"#).unwrap();
                     writeln!(output, r#"<div class="name">{}</div>"#, file.name).unwrap();
-                    writeln!(
+                    Self::write_line_entry(output, file.line_count, file.line_hit_count);
+                    Self::write_function_entry(
                         output,
-                        r#"<div class="data-entry">{} / {}</div>"#,
-                        file.line_hit_count, file.line_count
-                    )
-                    .unwrap();
-                    writeln!(
-                        output,
-                        r#"<div class="data-entry">{} %</div>"#,
-                        line_percentage
-                    )
-                    .unwrap();
-                    writeln!(
-                        output,
-                        r#"<div class="data-entry">{} / {}</div>"#,
-                        file.function_hit_count, file.function_count
-                    )
-                    .unwrap();
-                    writeln!(
-                        output,
-                        r#"<div class="data-entry">{} %</div>"#,
-                        function_percentage
-                    )
-                    .unwrap();
+                        file.function_count,
+                        file.function_hit_count,
+                    );
                     writeln!(output, "</div>").unwrap();
                 }
                 ItemType::Folder(folder) => {
-                    let line_percentage: f32 =
-                        (folder.line_hit_count as f32 / folder.line_count as f32) * 100.0;
-
-                    let function_percentage: f32 =
-                        (folder.function_hit_count as f32 / folder.function_count as f32) * 100.0;
-
                     writeln!(output, "<details>").unwrap();
                     writeln!(output, r#"<summary class="row">"#).unwrap();
                     writeln!(output, r#"<div class="name">{}</div>"#, folder.name).unwrap();
-                    writeln!(
+                    Self::write_line_entry(output, folder.line_count, folder.line_hit_count);
+                    Self::write_function_entry(
                         output,
-                        r#"<div class="data-entry">{} / {}</div>"#,
-                        folder.line_hit_count, folder.line_count
-                    )
-                    .unwrap();
-                    writeln!(
-                        output,
-                        r#"<div class="data-entry">{} %</div>"#,
-                        line_percentage
-                    )
-                    .unwrap();
-                    writeln!(
-                        output,
-                        r#"<div class="data-entry">{} / {}</div>"#,
-                        folder.function_hit_count, folder.function_count
-                    )
-                    .unwrap();
-                    writeln!(
-                        output,
-                        r#"<div class="data-entry">{} %</div>"#,
-                        function_percentage
-                    )
-                    .unwrap();
+                        folder.function_count,
+                        folder.function_hit_count,
+                    );
                     writeln!(output, "</summary>").unwrap();
                     Self::generate_html(folder, output);
                     writeln!(output, "</details>").unwrap();
@@ -100,9 +52,55 @@ impl HtmlOutput {
             }
         }
     }
+
+    fn write_line_entry(output: &mut String, lines_total: u32, lines_hit: u32) {
+        let percentage_calc: f32 = (lines_hit as f32 / lines_total as f32) * 100.0;
+
+        let percentage = if percentage_calc.is_nan() {
+            0.0
+        } else {
+            percentage_calc
+        };
+
+        writeln!(
+            output,
+            r#"<div class="data-entry">{} / {}</div>"#,
+            lines_hit, lines_total
+        )
+        .unwrap();
+        writeln!(
+            output,
+            r#"<div class="data-entry">{:.2} %</div>"#,
+            percentage
+        )
+        .unwrap();
+    }
+
+    fn write_function_entry(output: &mut String, functions_total: u32, functions_hit: u32) {
+        let percentage_calc: f32 = (functions_hit as f32 / functions_total as f32) * 100.0;
+
+        let percentage = if percentage_calc.is_nan() {
+            0.0
+        } else {
+            percentage_calc
+        };
+
+        writeln!(
+            output,
+            r#"<div class="data-entry">{} / {}</div>"#,
+            functions_hit, functions_total
+        )
+        .unwrap();
+        writeln!(
+            output,
+            r#"<div class="data-entry">{:.2} %</div>"#,
+            percentage
+        )
+        .unwrap();
+    }
 }
 
-const HTML_TEMPLATE: &str = r#"<!doctype html>
+const HTML_TEMPLATE_START: &str = r#"<!doctype html>
 <html>
     <head>
         <title></title>
@@ -115,13 +113,12 @@ const HTML_TEMPLATE: &str = r#"<!doctype html>
 
             details {
                 margin-left: 20px;
-                padding: 0.5rem;
-                padding-right: 0;
             }
 
             summary {
                 font-weight: bold;
                 list-style: none;
+                cursor: pointer;
             }
 
             details > summary::before {
@@ -146,6 +143,8 @@ const HTML_TEMPLATE: &str = r#"<!doctype html>
                 display: flex;
                 gap: 0.75rem;
                 width: 100%;
+                border-bottom: 1px solid grey;
+                padding-bottom: 4px;
             }
 
             .name {
