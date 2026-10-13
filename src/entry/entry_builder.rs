@@ -24,7 +24,9 @@ impl EntryBuilder {
         tokens: Vec<&str>,
         line_number: usize,
     ) -> Result<(), LovecovError> {
-        let first_token = tokens.first().unwrap();
+        let first_token = tokens
+            .first()
+            .ok_or(LovecovError::MissingToken(line_number))?;
 
         if self.entry.is_none() {
             if first_token.eq(&"SF") {
