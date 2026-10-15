@@ -1,4 +1,6 @@
-## lovecov
+<div align="center">
+    <img width="250" src="docs/logo.png" />
+</div>
 
 <div align="center">
     <i>A simple, cross-platform lcov parser for generating various output formats.</i>
