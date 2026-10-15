@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    constants,
+    cli::LovecovArgs,
     entry::{entry_builder::EntryBuilder, file_tree::FileTree, record::Record},
     errors::LovecovError,
     output::generator::Generator,
@@ -18,10 +18,8 @@ pub struct Lovecov<R> {
 }
 
 impl Lovecov<BufReader<File>> {
-    pub fn from_args(args: Vec<String>) -> Result<Self, LovecovError> {
-        let file_path = &args.get(1).ok_or(LovecovError::UsageError)?;
-
-        let file = File::open(file_path).map_err(|_| LovecovError::FileReadError)?;
+    pub fn from_args(args: LovecovArgs) -> Result<Self, LovecovError> {
+        let file = File::open(&args.file_path).map_err(|_| LovecovError::FileReadError)?;
         let reader = BufReader::new(file);
 
         Self::from_reader(args, reader)
@@ -29,12 +27,8 @@ impl Lovecov<BufReader<File>> {
 }
 
 impl<R: BufRead> Lovecov<R> {
-    fn from_reader(args: Vec<String>, reader: R) -> Result<Self, LovecovError> {
-        let generator_name = args
-            .get(2)
-            .map(|s| s.as_str())
-            .unwrap_or(constants::DEFAULT_OUTPUT);
-        let generator = Generator::from_str(generator_name)?;
+    fn from_reader(args: LovecovArgs, reader: R) -> Result<Self, LovecovError> {
+        let generator = args.output.unwrap_or(Generator::Summary);
 
         Ok(Self {
             tree: FileTree::new(),
@@ -90,26 +84,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn empty_args_fails() {
-        let args: Vec<String> = vec![];
-
-        let lovecov = Lovecov::from_args(args);
-
-        assert!(lovecov.is_err());
-    }
-
-    #[test]
-    fn missing_file_arg_fails() {
-        let args: Vec<String> = vec!["lovecov".into()];
-
-        let lovecov = Lovecov::from_args(args);
-
-        assert!(lovecov.is_err());
-    }
-
-    #[test]
     fn not_found_file_fails() {
-        let args: Vec<String> = vec!["lovecov".into(), "abcdefghijklmnop".into()];
+        let args = LovecovArgs {
+            file_path: "adasdasdasdasds".into(),
+            output: None,
+        };
 
         let lovecov = Lovecov::from_args(args);
 
@@ -118,7 +97,10 @@ mod tests {
 
     #[test]
     fn empty_output_defaults_to_summary() {
-        let args: Vec<String> = vec!["lovecov".into(), "file.txt".into()];
+        let args = LovecovArgs {
+            file_path: "file.txt".into(),
+            output: None,
+        };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nEND_OF_RECORD\n";
         let cursor = Cursor::new(mock_data.as_bytes());
@@ -133,20 +115,11 @@ mod tests {
     }
 
     #[test]
-    fn invalid_output_fails() {
-        let args: Vec<String> = vec!["lovecov".into(), "file.txt".into(), "apples".into()];
-
-        let mock_data = "SF:src/lib.rs\nDA:1,1\nEND_OF_RECORD\n";
-        let cursor = Cursor::new(mock_data.as_bytes());
-
-        let lovecov = Lovecov::from_reader(args, cursor);
-
-        assert!(lovecov.is_err());
-    }
-
-    #[test]
     fn provided_output_is_used() {
-        let args: Vec<String> = vec!["lovecov".into(), "file.txt".into(), "html".into()];
+        let args = LovecovArgs {
+            file_path: "file.txt".into(),
+            output: Some(Generator::Html),
+        };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nEND_OF_RECORD\n";
         let cursor = Cursor::new(mock_data.as_bytes());
@@ -159,7 +132,10 @@ mod tests {
 
     #[test]
     fn bad_file_fails() {
-        let args: Vec<String> = vec!["lovecov".into(), "file.txt".into()];
+        let args = LovecovArgs {
+            file_path: "file.txt".into(),
+            output: None,
+        };
 
         let mock_data = "SF:/test/file.txt\nDA:aaaaa\nend_of_record";
         let cursor = Cursor::new(mock_data.as_bytes());
@@ -173,7 +149,10 @@ mod tests {
 
     #[test]
     fn valid_file_passes() {
-        let args: Vec<String> = vec!["lovecov".into(), "file.txt".into()];
+        let args = LovecovArgs {
+            file_path: "file.txt".into(),
+            output: None,
+        };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nend_of_record\n";
         let cursor = Cursor::new(mock_data.as_bytes());

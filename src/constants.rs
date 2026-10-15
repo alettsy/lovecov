@@ -14,5 +14,4 @@ pub const DATA_SPLIT: &str = ",";
 pub const HIT_EMPTY: &str = "-";
 
 pub const ROOT_FOLDER_NAME: &str = "root";
-pub const DEFAULT_OUTPUT: &str = "summary";
 pub const HTML_FILE: &str = "coverage.html";

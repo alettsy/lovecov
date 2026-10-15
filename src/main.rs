@@ -1,16 +1,17 @@
-use std::env;
+use clap::Parser;
 
-use crate::{errors::LovecovError, lovecov::Lovecov};
+use crate::{cli::LovecovArgs, errors::LovecovError, lovecov::Lovecov};
 
+mod cli;
+mod constants;
 mod entry;
 mod errors;
 mod lovecov;
 mod output;
-mod constants;
 mod utils;
 
 fn main() -> Result<(), LovecovError> {
-    let args: Vec<String> = env::args().collect();
+    let args = LovecovArgs::parse();
 
     let mut lovecov = Lovecov::from_args(args)?;
     lovecov.run()?;
