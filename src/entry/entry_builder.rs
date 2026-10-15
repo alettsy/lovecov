@@ -88,7 +88,7 @@ impl EntryBuilder {
                 }
                 Ok(())
             }
-            Record::EndOfRecord => {
+            Record::End => {
                 self.reached_end = true;
                 Ok(())
             }
@@ -213,7 +213,7 @@ mod tests {
         let sf_record = Record::SourceFile("/home/projects/file.txt".into());
         entry.process_record(sf_record).unwrap();
 
-        let record = Record::EndOfRecord;
+        let record = Record::End;
 
         let result = entry.process_record(record);
         assert!(result.is_ok());

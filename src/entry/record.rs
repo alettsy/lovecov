@@ -10,7 +10,7 @@ pub enum Record {
     LineExecCount(u32, u32),
     LineCount(u32),
     LineHitCount(u32),
-    EndOfRecord,
+    End,
 }
 
 impl Record {
@@ -32,7 +32,7 @@ impl Record {
         let token_str = token.to_string().to_lowercase();
 
         if token_str == constants::END_OF_RECORD {
-            return Ok(Record::EndOfRecord);
+            return Ok(Record::End);
         }
 
         if token_str == constants::TEST_NAME {

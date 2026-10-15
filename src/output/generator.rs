@@ -3,7 +3,7 @@ use crate::{
     errors::LovecovError,
     output::{OutputGenerator, html::HtmlOutput, summary::SummaryOutput},
 };
-use clap::{ValueEnum};
+use clap::ValueEnum;
 
 #[derive(Debug, ValueEnum, Clone)]
 pub enum Generator {

@@ -34,10 +34,7 @@ pub struct FileData {
 
 impl FileData {
     pub fn new(sf: &str) -> Result<FileData, ()> {
-        let sf_split: Vec<String> = sf
-            .split(|c| c == '/' || c == '\\')
-            .map(|s| s.to_string())
-            .collect();
+        let sf_split: Vec<String> = sf.split(['/', '\\']).map(|s| s.to_string()).collect();
 
         let name = sf_split.last().ok_or(())?.to_string();
 
@@ -74,7 +71,7 @@ impl FileData {
             .iter()
             .map(|l| {
                 if let Some(matched) = lines_map.remove(&l.number) {
-                    l.merge_with(&matched)
+                    l.merge_with(matched)
                 } else {
                     l.clone()
                 }
@@ -86,7 +83,7 @@ impl FileData {
             .iter()
             .map(|l| {
                 if let Some(matched) = functions_map.remove(&l.name) {
-                    l.merge_with(&matched)
+                    l.merge_with(matched)
                 } else {
                     l.clone()
                 }
