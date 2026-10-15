@@ -7,6 +7,7 @@ pub enum LovecovError {
     ErrorAtLine(usize, Box<LovecovError>),
     UsageError,
     FileReadError,
+    FileWriteError,
     InvalidStartToken,
     MissingToken,
     UnknownToken(String),
@@ -43,6 +44,7 @@ impl Display for LovecovError {
             LovecovError::RepeatedSourceTokenError => {
                 writeln!(f, "Source file token repeated in entry")
             }
+            LovecovError::FileWriteError => writeln!(f, "Failed to write to output file"),
         }
     }
 }

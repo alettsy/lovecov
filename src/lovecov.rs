@@ -75,7 +75,7 @@ impl<R: BufRead> Lovecov<R> {
         }
 
         self.tree.post_process();
-        self.output_generator.generate(&self.tree);
+        self.output_generator.generate(&self.tree)?;
         Ok(())
     }
 }

@@ -7,54 +7,58 @@ use crate::{
         file_data::{FolderData, ItemType},
         file_tree::FileTree,
     },
+    errors::LovecovError,
     output::OutputGenerator,
 };
 
 pub struct HtmlOutput;
 
 impl OutputGenerator for HtmlOutput {
-    fn generate(tree: &FileTree) {
+    fn generate(tree: &FileTree) -> Result<(), LovecovError> {
         let mut output = String::from(HTML_TEMPLATE_START);
-        Self::generate_html(&tree.root, &mut output);
+        Self::generate_html(&tree.root, &mut output).map_err(|_| LovecovError::FileWriteError)?;
         output.push_str(HTML_TEMPLATE_END);
-        fs::write(constants::HTML_FILE, output).unwrap();
+        fs::write(constants::HTML_FILE, output).map_err(|_| LovecovError::FileWriteError)
     }
 }
 
 impl HtmlOutput {
-    fn generate_html(folder: &FolderData, output: &mut String) {
+    fn generate_html(folder: &FolderData, output: &mut String) -> Result<(), ()> {
         for item in &folder.items {
             match item {
                 ItemType::File(file) => {
-                    writeln!(output, r#"<div class="file row">"#).unwrap();
-                    writeln!(output, r#"<div class="name">{}</div>"#, file.name).unwrap();
-                    Self::write_line_entry(output, file.line_count, file.line_hit_count);
+                    writeln!(output, r#"<div class="file row">"#).map_err(|_| ())?;
+                    writeln!(output, r#"<div class="name">{}</div>"#, file.name).map_err(|_| ())?;
+                    Self::write_line_entry(output, file.line_count, file.line_hit_count)?;
                     Self::write_function_entry(
                         output,
                         file.function_count,
                         file.function_hit_count,
-                    );
-                    writeln!(output, "</div>").unwrap();
+                    )?;
+                    writeln!(output, "</div>").map_err(|_| ())?;
                 }
                 ItemType::Folder(folder) => {
-                    writeln!(output, "<details>").unwrap();
-                    writeln!(output, r#"<summary class="row">"#).unwrap();
-                    writeln!(output, r#"<div class="name">{}</div>"#, folder.name).unwrap();
-                    Self::write_line_entry(output, folder.line_count, folder.line_hit_count);
+                    writeln!(output, "<details>").map_err(|_| ())?;
+                    writeln!(output, r#"<summary class="row">"#).map_err(|_| ())?;
+                    writeln!(output, r#"<div class="name">{}</div>"#, folder.name)
+                        .map_err(|_| ())?;
+                    Self::write_line_entry(output, folder.line_count, folder.line_hit_count)?;
                     Self::write_function_entry(
                         output,
                         folder.function_count,
                         folder.function_hit_count,
-                    );
-                    writeln!(output, "</summary>").unwrap();
-                    Self::generate_html(folder, output);
-                    writeln!(output, "</details>").unwrap();
+                    )?;
+                    writeln!(output, "</summary>").map_err(|_| ())?;
+                    Self::generate_html(folder, output)?;
+                    writeln!(output, "</details>").map_err(|_| ())?;
                 }
             }
         }
+
+        Ok(())
     }
 
-    fn write_line_entry(output: &mut String, lines_total: u32, lines_hit: u32) {
+    fn write_line_entry(output: &mut String, lines_total: u32, lines_hit: u32) -> Result<(), ()> {
         let percentage_calc: f32 = (lines_hit as f32 / lines_total as f32) * 100.0;
 
         let percentage = if percentage_calc.is_nan() {
@@ -68,16 +72,22 @@ impl HtmlOutput {
             r#"<div class="data-entry">{} / {}</div>"#,
             lines_hit, lines_total
         )
-        .unwrap();
+        .map_err(|_| ())?;
         writeln!(
             output,
             r#"<div class="data-entry">{:.2} %</div>"#,
             percentage
         )
-        .unwrap();
+        .map_err(|_| ())?;
+
+        Ok(())
     }
 
-    fn write_function_entry(output: &mut String, functions_total: u32, functions_hit: u32) {
+    fn write_function_entry(
+        output: &mut String,
+        functions_total: u32,
+        functions_hit: u32,
+    ) -> Result<(), ()> {
         let percentage_calc: f32 = (functions_hit as f32 / functions_total as f32) * 100.0;
 
         let percentage = if percentage_calc.is_nan() {
@@ -91,13 +101,15 @@ impl HtmlOutput {
             r#"<div class="data-entry">{} / {}</div>"#,
             functions_hit, functions_total
         )
-        .unwrap();
+        .map_err(|_| ())?;
         writeln!(
             output,
             r#"<div class="data-entry">{:.2} %</div>"#,
             percentage
         )
-        .unwrap();
+        .map_err(|_| ())?;
+
+        Ok(())
     }
 }
 

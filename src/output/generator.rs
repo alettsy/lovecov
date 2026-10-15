@@ -16,10 +16,12 @@ impl Generator {
         }
     }
 
-    pub fn generate(&self, tree: &FileTree) {
+    pub fn generate(&self, tree: &FileTree) -> Result<(), LovecovError> {
         match self {
-            Generator::Summary => SummaryOutput::generate(tree),
-            Generator::Html => HtmlOutput::generate(tree),
+            Generator::Summary => SummaryOutput::generate(tree)?,
+            Generator::Html => HtmlOutput::generate(tree)?,
         }
+
+        Ok(())
     }
 }

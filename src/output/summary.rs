@@ -1,13 +1,16 @@
 use crate::{
-    entry::file_tree::FileTree,
-    entry::file_data::{FolderData, ItemType},
+    entry::{
+        file_data::{FolderData, ItemType},
+        file_tree::FileTree,
+    },
+    errors::LovecovError,
     output::OutputGenerator,
 };
 
 pub struct SummaryOutput;
 
 impl OutputGenerator for SummaryOutput {
-    fn generate(tree: &FileTree) {
+    fn generate(tree: &FileTree) -> Result<(), LovecovError> {
         let mut summary = SummaryOutputData::default();
         Self::generate_summary(&tree.root, &mut summary);
 
@@ -26,6 +29,8 @@ impl OutputGenerator for SummaryOutput {
             "Function coverage: {} / {} ({} %)",
             summary.function_hit_total, summary.function_total, function_percentage
         );
+
+        Ok(())
     }
 }
 
