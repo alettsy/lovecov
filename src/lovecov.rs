@@ -45,6 +45,10 @@ impl<R: BufRead> Lovecov<R> {
             let line_number = i + 1;
             let line = line.map_err(|_| LovecovError::FileReadError)?;
 
+            if line.is_empty() {
+                continue;
+            }
+
             let record = Record::from_line(&line).map_err(|e| e.at_line(line_number))?;
 
             if self.current_entry.is_none()
