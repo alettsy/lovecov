@@ -25,11 +25,11 @@ impl OutputGenerator for SummaryOutput {
 
         println!("Summary:");
         println!(
-            "Line coverage: {} / {} ({} %)",
+            "Line coverage: {} / {} ({:.2} %)",
             summary.line_hit_total, summary.line_total, line_percentage
         );
         println!(
-            "Function coverage: {} / {} ({} %)",
+            "Function coverage: {} / {} ({:.2} %)",
             summary.function_hit_total, summary.function_total, function_percentage
         );
 
