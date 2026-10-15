@@ -11,7 +11,9 @@ Here is an overview of what this file contains:
 
 ## Tools
 
-This section is a work-in-progress
+I personally use [just](https://github.com/casey/just) to make command running simpler.
+
+Before a commit/PR, you should run `just before_commit` or `just bc` to run pre-checks, like Clippy.
 
 ## Commiting
 
