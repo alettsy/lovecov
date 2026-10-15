@@ -67,7 +67,10 @@ impl<R: BufRead> Lovecov<R> {
                 }
 
                 if g.is_done() {
-                    let entry = g.entry.clone().unwrap();
+                    let entry = g
+                        .entry
+                        .clone()
+                        .expect("Failed to get entry when end reached");
                     self.tree.add_file(entry)?;
                     self.current_entry = None;
                 }
