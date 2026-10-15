@@ -5,6 +5,7 @@ use crate::{
     },
     errors::LovecovError,
     output::OutputGenerator,
+    utils,
 };
 
 pub struct SummaryOutput;
@@ -15,10 +16,12 @@ impl OutputGenerator for SummaryOutput {
         Self::generate_summary(&tree.root, &mut summary);
 
         let line_percentage: f32 =
-            (summary.line_hit_total as f32 / summary.line_total as f32) * 100.0;
+            utils::calc_percent(summary.line_hit_total as f32, summary.line_total as f32);
 
-        let function_percentage: f32 =
-            (summary.function_hit_total as f32 / summary.function_total as f32) * 100.0;
+        let function_percentage: f32 = utils::calc_percent(
+            summary.function_hit_total as f32,
+            summary.function_total as f32,
+        );
 
         println!("Summary:");
         println!(

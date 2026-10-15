@@ -7,6 +7,7 @@ mod errors;
 mod lovecov;
 mod output;
 mod constants;
+mod utils;
 
 fn main() -> Result<(), LovecovError> {
     let args: Vec<String> = env::args().collect();

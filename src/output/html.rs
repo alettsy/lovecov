@@ -9,6 +9,7 @@ use crate::{
     },
     errors::LovecovError,
     output::OutputGenerator,
+    utils,
 };
 
 pub struct HtmlOutput;
@@ -59,13 +60,7 @@ impl HtmlOutput {
     }
 
     fn write_line_entry(output: &mut String, lines_total: u32, lines_hit: u32) -> Result<(), ()> {
-        let percentage_calc: f32 = (lines_hit as f32 / lines_total as f32) * 100.0;
-
-        let percentage = if percentage_calc.is_nan() {
-            0.0
-        } else {
-            percentage_calc
-        };
+        let percentage = utils::calc_percent(lines_hit as f32, lines_total as f32);
 
         writeln!(
             output,
@@ -88,13 +83,7 @@ impl HtmlOutput {
         functions_total: u32,
         functions_hit: u32,
     ) -> Result<(), ()> {
-        let percentage_calc: f32 = (functions_hit as f32 / functions_total as f32) * 100.0;
-
-        let percentage = if percentage_calc.is_nan() {
-            0.0
-        } else {
-            percentage_calc
-        };
+        let percentage = utils::calc_percent(functions_hit as f32, functions_total as f32);
 
         writeln!(
             output,
