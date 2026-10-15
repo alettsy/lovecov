@@ -1,6 +1,6 @@
 use crate::{
     constants,
-    entry::data::{FileData, FolderData, ItemType},
+    entry::file_data::{FileData, FolderData, ItemType},
     errors::LovecovError,
 };
 

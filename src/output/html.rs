@@ -4,7 +4,7 @@ use std::fs;
 use crate::{
     constants,
     entry::{
-        data::{FolderData, ItemType},
+        file_data::{FolderData, ItemType},
         file_tree::FileTree,
     },
     output::OutputGenerator,

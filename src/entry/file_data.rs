@@ -1,12 +1,6 @@
 use std::{cmp, collections::HashMap};
 
-use crate::{
-    entry::{
-        parts::{Function, Line},
-        token::Token,
-    },
-    errors::LovecovError,
-};
+use crate::entry::parts::{Function, Line};
 
 pub enum ItemType {
     File(FileData),
@@ -39,19 +33,16 @@ pub struct FileData {
 }
 
 impl FileData {
-    pub fn new(sf: &str) -> Result<FileData, LovecovError> {
+    pub fn new(sf: &str) -> Result<FileData, ()> {
         let sf_split: Vec<String> = sf
             .split(|c| c == '/' || c == '\\')
             .map(|s| s.to_string())
             .collect();
 
-        let name = sf_split
-            .last()
-            .ok_or(Token::SourceFile.into_err())?
-            .to_string();
+        let name = sf_split.last().ok_or(())?.to_string();
 
         if name.is_empty() {
-            return Err(Token::SourceFile.into_err());
+            return Err(());
         }
 
         let path = &sf_split[..sf_split.len() - 1];

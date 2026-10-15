@@ -1,12 +1,11 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader},
-    str::FromStr,
 };
 
 use crate::{
     constants,
-    entry::{entry_builder::EntryBuilder, file_tree::FileTree, row::Row, token::Token},
+    entry::{entry_builder::EntryBuilder, file_tree::FileTree, record::Record},
     errors::LovecovError,
     output::generator::Generator,
 };
@@ -52,16 +51,18 @@ impl<R: BufRead> Lovecov<R> {
             let line_number = i + 1;
             let line = line.map_err(|_| LovecovError::FileReadError)?;
 
-            let row = Row::from_str(&line)
+            let record = Record::from_line(&line)
                 .map_err(|e| LovecovError::ErrorAtLine(line_number, Box::new(e)))?;
 
-            if self.current_entry.is_none() && row.token == Token::SourceFile {
+            if self.current_entry.is_none()
+                && let Record::SourceFile(_) = record
+            {
                 self.current_entry = Some(EntryBuilder::new());
             }
 
             if let Some(ref mut g) = self.current_entry {
                 if !g.is_done() {
-                    g.process_tokens(row.token, row.data.as_ref())
+                    g.process_record(record)
                         .map_err(|e| LovecovError::ErrorAtLine(line_number, Box::new(e)))?;
                 }
 

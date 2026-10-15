@@ -3,8 +3,6 @@ use std::{
     fmt::{Debug, Display},
 };
 
-use crate::entry::token::Token;
-
 pub enum LovecovError {
     ErrorAtLine(usize, Box<LovecovError>),
     UsageError,
@@ -12,7 +10,7 @@ pub enum LovecovError {
     InvalidStartToken,
     MissingToken,
     UnknownToken(String),
-    TokenFormatError(Token),
+    RecordFormatError(String),
     RepeatedSourceTokenError,
     TreeError(String),
 }
@@ -30,9 +28,8 @@ impl Display for LovecovError {
             }
             LovecovError::FileReadError => writeln!(f, "Failed to read provided file"),
             LovecovError::MissingToken => writeln!(f, "Expected token, but found nothing"),
-            LovecovError::TokenFormatError(token) => {
-                let token_str: String = token.clone().into();
-                writeln!(f, "Row for token '{}' formatted badly", token_str)
+            LovecovError::RecordFormatError(token) => {
+                writeln!(f, "Row for token '{}' formatted badly", token)
             }
             LovecovError::TreeError(message) => writeln!(f, "{}", message),
             LovecovError::UnknownToken(token) => {

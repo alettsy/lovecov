@@ -1,6 +1,6 @@
 use crate::{
     entry::file_tree::FileTree,
-    entry::data::{FolderData, ItemType},
+    entry::file_data::{FolderData, ItemType},
     output::OutputGenerator,
 };
 
