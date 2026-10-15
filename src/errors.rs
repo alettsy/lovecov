@@ -15,13 +15,19 @@ pub enum LovecovError {
     TreeError(String),
 }
 
+impl LovecovError {
+    pub fn at_line(self, line: usize) -> LovecovError {
+        LovecovError::ErrorAtLine(line, Box::new(self))
+    }
+}
+
 impl Display for LovecovError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             LovecovError::FileReadError => writeln!(f, "Failed to read provided file"),
             LovecovError::MissingToken => writeln!(f, "Expected token, but found nothing"),
             LovecovError::RecordFormatError(token) => {
-                writeln!(f, "Row for token '{}' formatted badly", token)
+                writeln!(f, "Record for token '{}' invalid", token)
             }
             LovecovError::TreeError(message) => writeln!(f, "{}", message),
             LovecovError::UnknownToken(token) => {

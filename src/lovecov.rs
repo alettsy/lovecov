@@ -45,8 +45,7 @@ impl<R: BufRead> Lovecov<R> {
             let line_number = i + 1;
             let line = line.map_err(|_| LovecovError::FileReadError)?;
 
-            let record = Record::from_line(&line)
-                .map_err(|e| LovecovError::ErrorAtLine(line_number, Box::new(e)))?;
+            let record = Record::from_line(&line).map_err(|e| e.at_line(line_number))?;
 
             if self.current_entry.is_none()
                 && let Record::SourceFile(_) = record
@@ -57,7 +56,7 @@ impl<R: BufRead> Lovecov<R> {
             if let Some(ref mut g) = self.current_entry {
                 if !g.is_done() {
                     g.process_record(record)
-                        .map_err(|e| LovecovError::ErrorAtLine(line_number, Box::new(e)))?;
+                        .map_err(|e| e.at_line(line_number))?;
                 }
 
                 if g.is_done() {
