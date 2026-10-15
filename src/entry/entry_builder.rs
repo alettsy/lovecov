@@ -33,7 +33,7 @@ impl EntryBuilder {
         }
 
         match record {
-            Record::TestName(_) => {
+            Record::TestName => {
                 // NOTE: ignoring TN because it is not that important
                 Ok(())
             }
