@@ -85,3 +85,9 @@ This will output `coverage.html` to the current directory.
 All contributions are welcome!
 
 See [CONTRIBUTING](CONTRIBUTING.md) for how.
+
+## Planned features
+
+- More output formats, such as CSV
+- Utilities options, such as omitting files from outputs
+- `.lovecov` file to make setup easier
