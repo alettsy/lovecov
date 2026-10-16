@@ -2,12 +2,14 @@
 name = "lovecov"
 description = "A simple, cross-platform lcov parser for generating various output formats"
 version = "1.0.0"
+authors = ["Alex Betts (alettsy)"]
 edition = "2024"
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/alettsy/lovecov"
-keywords = ["lcov", "genhtml", "cli", "tool"]
+homepage = "https://github.com/alettsy/lovecov"
 categories = ["command-line-utilities"]
+keywords = ["lcov", "coverage", "code-coverage", "cli"]
 
 [[bin]]
 name = "lovecov"
