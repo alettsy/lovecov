@@ -29,11 +29,17 @@
 
 ### Cargo
 
-The easiest way to install it is via `cargo`:
+The easiest way to install it for your platform is via `cargo`:
 
 ```bash
 cargo install lovecov
 ```
+
+### Release builds
+
+You can find pre-built release binaries under the [releases](https://github.com/alettsy/lovecov/releases) page.
+
+After downloading, make sure you add it to your `PATH`!
 
 ### Manual build
 
@@ -61,6 +67,8 @@ All outputs currently supported:
 
 1. `summary` - simple printed summary
 2. `html` - single, static HTML file with navigatable tabs
+
+If you get stuck, run `lovecov --help` !
 
 ### Example
 
