@@ -33,10 +33,6 @@ impl EntryBuilder {
         }
 
         match record {
-            Record::TestName => {
-                // NOTE: ignoring TN because it is not that important
-                Ok(())
-            }
             Record::SourceFile(_) => Err(LovecovError::RepeatedSourceTokenError),
             Record::FunctionName(line, func) => {
                 if let Some(entry) = &mut self.entry {
@@ -92,6 +88,11 @@ impl EntryBuilder {
                 self.reached_end = true;
                 Ok(())
             }
+            // NOTE: ignoring the below 4 as their data is not currently used
+            Record::TestName => Ok(()),
+            Record::BranchCoverageData => Ok(()),
+            Record::BranchCount => Ok(()),
+            Record::BranchHitCount => Ok(()),
         }
     }
 

@@ -10,6 +10,9 @@ pub enum Record {
     LineExecCount(u32, u32),
     LineCount(u32),
     LineHitCount(u32),
+    BranchCoverageData,
+    BranchCount,
+    BranchHitCount,
     End,
 }
 
@@ -83,6 +86,9 @@ impl Record {
                     .map_err(|_| LovecovError::RecordFormatError(token.into()))?;
                 Ok(Record::LineHitCount(count))
             }
+            constants::BRANCH_DATA => Ok(Record::BranchCoverageData),
+            constants::BRANCH_COUNT => Ok(Record::BranchCount),
+            constants::BRANCH_HIT_COUNT => Ok(Record::BranchHitCount),
             token => Err(LovecovError::UnknownToken(token.into())),
         }
     }

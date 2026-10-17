@@ -22,7 +22,10 @@ Essentially, it is a representation of code test coverage in a simple line-by-li
 | FNH           | Functions hit          | FNH: 14           |
 | DA            | Line execute count     | DA:23,4           |
 | LF            | Line count             | LF:123            |
-| LH            | Lines hit              | LH: 97            |
+| LH            | Lines hit              | LH:97             |
+| BRDA          | Branch data            | BRDA:23,1,2,4     |
+| LH            | Branch count           | BRF:10            |
+| LH            | Branches hit           | BRH:5             |
 | end_of_record | End of record          | end_of_record     |
 
 ### Entry
@@ -49,6 +52,14 @@ SF:/home/user/project/other.cpp
 DA:1,2
 DA:2,0
 DA:3,1
+BRDA:28,0,0,3
+BRDA:28,0,1,2
+BRDA:29,1,0,2
+BRDA:29,1,1,0
+BRDA:43,2,0,-
+BRDA:43,2,1,-
+BRF:6
+BRH:4
 LF:3
 LH:2
 end_of_record

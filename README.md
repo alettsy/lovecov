@@ -97,5 +97,6 @@ See [CONTRIBUTING](CONTRIBUTING.md) for how.
 ## Planned features
 
 - More output formats, such as CSV
+- Support branch data
 - Utilities options, such as omitting files from outputs
 - `.lovecov` file to make setup easier
