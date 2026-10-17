@@ -98,5 +98,6 @@ See [CONTRIBUTING](CONTRIBUTING.md) for how.
 
 - More output formats, such as CSV
 - Support branch data
+- Improvements to HTML output, such as progress bars and color-coding
 - Utilities options, such as omitting files from outputs
 - `.lovecov` file to make setup easier
