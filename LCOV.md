@@ -19,7 +19,7 @@ Essentially, it is a representation of code test coverage in a simple line-by-li
 | FN            | Function name          | FN:44,func1       |
 | FNDA          | Function execute count | FNDA:10,func1     |
 | FNF           | Function count         | FNF:23            |
-| FNH           | Functions hit          | FNH: 14           |
+| FNH           | Functions hit          | FNH:14            |
 | DA            | Line execute count     | DA:23,4           |
 | LF            | Line count             | LF:123            |
 | LH            | Lines hit              | LH:97             |
