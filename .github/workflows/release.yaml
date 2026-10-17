@@ -27,18 +27,23 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             name: linux-x86_64
+            use_cross: false
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             name: linux-aarch64
+            use_cross: true
           - os: macos-latest
             target: x86_64-apple-darwin
             name: macos-x86_64
+            use_cross: false
           - os: macos-latest
             target: aarch64-apple-darwin
             name: macos-aarch64
+            use_cross: false
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             name: windows-x86_64
+            use_cross: false
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -48,17 +53,65 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install cross-compilation tools
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
+      - name: Install cross
+        if: matrix.use_cross
+        run: cargo install cross
 
-      - name: Build
+      - name: Build with cross
+        if: matrix.use_cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Build with cargo
+        if: ${{ !matrix.use_cross }}
         run: cargo build --release --target ${{ matrix.target }}
 
-  publish:
+      - name: Prepare binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p release
+          cp target/${{ matrix.target }}/release/lovecov release/lovecov-${{ matrix.name }}
+          chmod +x release/lovecov-${{ matrix.name }}
+
+      - name: Prepare binary (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mkdir release
+          copy target\${{ matrix.target }}\release\lovecov.exe release\lovecov-${{ matrix.name }}.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lovecov-${{ matrix.name }}
+          path: release/
+
+  release:
     needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Flatten release assets
+        run: |
+          mkdir -p flat-assets
+          find release-assets -type f -exec cp {} flat-assets/ \;
+          ls -la flat-assets/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: flat-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
