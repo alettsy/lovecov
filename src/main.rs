@@ -1,13 +1,13 @@
 use clap::Parser;
 
-use crate::{cli::LovecovArgs, errors::LovecovError, lovecov::Lovecov};
+use crate::{cli::args::LovecovArgs, errors::LovecovError, lovecov::Lovecov};
 
 mod cli;
 mod constants;
-mod record;
 mod errors;
 mod lovecov;
 mod output;
+mod record;
 mod utils;
 
 fn main() -> Result<(), LovecovError> {

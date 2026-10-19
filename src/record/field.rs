@@ -61,13 +61,13 @@ impl Field {
                 Ok(Field::FunctionExecCount(values.0, values.1))
             }
             constants::FUNC_COUNT => {
-                let count = Self::process_num(data)
-                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                let count =
+                    Self::process_num(data).map_err(|_| LovecovError::RecordFormat(tag.into()))?;
                 Ok(Field::FunctionCount(count))
             }
             constants::FUNC_HIT_COUNT => {
-                let count = Self::process_num(data)
-                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                let count =
+                    Self::process_num(data).map_err(|_| LovecovError::RecordFormat(tag.into()))?;
                 Ok(Field::FunctionHitCount(count))
             }
             constants::LINE_EXEC_COUNT => {
@@ -76,13 +76,13 @@ impl Field {
                 Ok(Field::LineExecCount(values.0, values.1))
             }
             constants::LINE_COUNT => {
-                let count = Self::process_num(data)
-                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                let count =
+                    Self::process_num(data).map_err(|_| LovecovError::RecordFormat(tag.into()))?;
                 Ok(Field::LineCount(count))
             }
             constants::LINE_HIT_COUNT => {
-                let count = Self::process_num(data)
-                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                let count =
+                    Self::process_num(data).map_err(|_| LovecovError::RecordFormat(tag.into()))?;
                 Ok(Field::LineHitCount(count))
             }
             constants::BRANCH_DATA => Ok(Field::BranchCoverageData),

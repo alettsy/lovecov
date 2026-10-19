@@ -1,9 +1,12 @@
-use crate::{record::file_tree::FileTree, errors::LovecovError};
+use crate::{errors::LovecovError, record::file_tree::FileTree};
 
 pub mod generator;
-pub mod html;
-pub mod summary;
+
+mod file_output;
+mod file_system;
+mod html;
+mod summary;
 
 pub trait OutputGenerator {
-    fn generate(tree: &FileTree) -> Result<(), LovecovError>;
+    fn generate(&self, tree: &FileTree) -> Result<(), LovecovError>;
 }

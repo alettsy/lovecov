@@ -1,21 +1,35 @@
 use crate::{
-    record::file_tree::FileTree,
+    cli::{args::LovecovArgs, generator_type::GeneratorType},
+    constants,
     errors::LovecovError,
-    output::{OutputGenerator, html::HtmlOutput, summary::SummaryOutput},
+    output::{OutputGenerator, file_output::FileOutput, html::HtmlOutput, summary::SummaryOutput},
+    record::file_tree::FileTree,
 };
-use clap::ValueEnum;
 
-#[derive(Debug, ValueEnum, Clone)]
 pub enum Generator {
     Summary,
-    Html,
+    Html(FileOutput),
 }
 
 impl Generator {
+    pub fn from_type_and_args(args: LovecovArgs, gen_type: GeneratorType) -> Self {
+        match gen_type {
+            GeneratorType::Summary => Generator::Summary,
+            GeneratorType::Html => Generator::Html(FileOutput::from_path_and_default(
+                args.output_path,
+                constants::HTML_FILE.to_string(),
+            )),
+        }
+    }
+
     pub fn generate(&self, tree: &FileTree) -> Result<(), LovecovError> {
         match self {
-            Generator::Summary => SummaryOutput::generate(tree)?,
-            Generator::Html => HtmlOutput::generate(tree)?,
+            Generator::Summary => SummaryOutput {}.generate(tree)?,
+            Generator::Html(file_out) => {
+                let file_out = file_out.clone();
+                let out = HtmlOutput { file_out };
+                out.generate(tree)?
+            }
         }
 
         Ok(())

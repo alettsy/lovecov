@@ -7,6 +7,7 @@ pub enum LovecovError {
     ErrorAtLine(usize, Box<LovecovError>),
     FileRead,
     FileWrite,
+    InvalidFilePath,
     MissingTag,
     UnknownTag(String),
     InvalidStartTag,
@@ -42,6 +43,7 @@ impl Display for LovecovError {
                 writeln!(f, "Source file tag repeated in record")
             }
             LovecovError::FileWrite => writeln!(f, "Failed to write to output file"),
+            LovecovError::InvalidFilePath => writeln!(f, "Invalid output path provided"),
         }
     }
 }

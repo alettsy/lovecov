@@ -4,10 +4,10 @@ use std::{
 };
 
 use crate::{
-    cli::LovecovArgs,
-    record::{field::Field, file_tree::FileTree, record::RecordBuilder},
+    cli::{args::LovecovArgs, generator_type::GeneratorType},
     errors::LovecovError,
     output::generator::Generator,
+    record::{field::Field, file_tree::FileTree, record::RecordBuilder},
 };
 
 pub struct Lovecov<R> {
@@ -28,7 +28,8 @@ impl Lovecov<BufReader<File>> {
 
 impl<R: BufRead> Lovecov<R> {
     fn from_reader(args: LovecovArgs, reader: R) -> Result<Self, LovecovError> {
-        let generator = args.output.unwrap_or(Generator::Summary);
+        let generator_type = args.output.clone().unwrap_or(GeneratorType::Summary);
+        let generator = Generator::from_type_and_args(args, generator_type);
 
         Ok(Self {
             tree: FileTree::new(),
@@ -91,6 +92,7 @@ mod tests {
         let args = LovecovArgs {
             file_path: "adasdasdasdasds".into(),
             output: None,
+            output_path: None,
         };
 
         let lovecov = Lovecov::from_args(args);
@@ -103,6 +105,7 @@ mod tests {
         let args = LovecovArgs {
             file_path: "file.txt".into(),
             output: None,
+            output_path: None,
         };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nEND_OF_RECORD\n";
@@ -121,7 +124,8 @@ mod tests {
     fn provided_output_is_used() {
         let args = LovecovArgs {
             file_path: "file.txt".into(),
-            output: Some(Generator::Html),
+            output: Some(GeneratorType::Html),
+            output_path: None,
         };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nEND_OF_RECORD\n";
@@ -130,7 +134,10 @@ mod tests {
         let lovecov = Lovecov::from_reader(args, cursor);
 
         assert!(lovecov.is_ok());
-        assert!(matches!(lovecov.unwrap().output_generator, Generator::Html));
+        assert!(matches!(
+            lovecov.unwrap().output_generator,
+            Generator::Html(_)
+        ));
     }
 
     #[test]
@@ -138,6 +145,7 @@ mod tests {
         let args = LovecovArgs {
             file_path: "file.txt".into(),
             output: None,
+            output_path: None,
         };
 
         let mock_data = "SF:/test/file.txt\nDA:aaaaa\nend_of_record";
@@ -155,6 +163,7 @@ mod tests {
         let args = LovecovArgs {
             file_path: "file.txt".into(),
             output: None,
+            output_path: None,
         };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nend_of_record\n";

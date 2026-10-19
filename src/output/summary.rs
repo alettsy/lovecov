@@ -11,7 +11,7 @@ use crate::{
 pub struct SummaryOutput;
 
 impl OutputGenerator for SummaryOutput {
-    fn generate(tree: &FileTree) -> Result<(), LovecovError> {
+    fn generate(&self, tree: &FileTree) -> Result<(), LovecovError> {
         let mut summary = SummaryOutputData::default();
         Self::generate_summary(&tree.root, &mut summary);
 

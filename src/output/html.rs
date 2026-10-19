@@ -1,10 +1,8 @@
 use std::fmt::Write;
-use std::fs;
 
 use crate::{
-    constants,
     errors::LovecovError,
-    output::OutputGenerator,
+    output::{OutputGenerator, file_output::FileOutput},
     record::{
         file_data::{FolderData, ItemType},
         file_tree::FileTree,
@@ -12,14 +10,18 @@ use crate::{
     utils,
 };
 
-pub struct HtmlOutput;
+pub struct HtmlOutput {
+    pub file_out: FileOutput,
+}
 
 impl OutputGenerator for HtmlOutput {
-    fn generate(tree: &FileTree) -> Result<(), LovecovError> {
+    fn generate(&self, tree: &FileTree) -> Result<(), LovecovError> {
         let mut output = String::from(HTML_TEMPLATE_START);
         Self::generate_html(&tree.root, &mut output).map_err(|_| LovecovError::FileWrite)?;
         output.push_str(HTML_TEMPLATE_END);
-        fs::write(constants::HTML_FILE, output).map_err(|_| LovecovError::FileWrite)
+
+        self.file_out.write(&output)?;
+        Ok(())
     }
 }
 
