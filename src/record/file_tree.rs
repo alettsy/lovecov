@@ -1,6 +1,6 @@
 use crate::{
     constants,
-    entry::file_data::{FileData, FolderData, ItemType},
+    record::file_data::{FileData, FolderData, ItemType},
     errors::LovecovError,
 };
 
@@ -38,7 +38,7 @@ impl FileTree {
                         items[index] = ItemType::File(merged_file);
                         Ok(())
                     }
-                    ItemType::Folder(_) => Err(LovecovError::TreeError(
+                    ItemType::Folder(_) => Err(LovecovError::Tree(
                         "Expected file, but points to folder".into(),
                     )),
                 }
@@ -72,7 +72,7 @@ impl FileTree {
                 Self::add_file_recursive(&mut folder.items, path, file)?;
                 Ok(())
             }
-            ItemType::File(_) => Err(LovecovError::TreeError(
+            ItemType::File(_) => Err(LovecovError::Tree(
                 "Path matched with file, not folder. Bad SF".into(),
             )),
         }
@@ -112,7 +112,7 @@ impl FileTree {
 
 #[cfg(test)]
 mod tests {
-    use crate::entry::parts::{Function, Line};
+    use crate::record::parts::{Function, Line};
 
     use super::*;
 
@@ -152,9 +152,9 @@ mod tests {
 
         assert!(tree.root.items.len() == 1);
 
-        let first_entry = tree.root.items.first().unwrap();
+        let first_record = tree.root.items.first().unwrap();
 
-        assert!(matches!(first_entry, ItemType::File(_)));
+        assert!(matches!(first_record, ItemType::File(_)));
     }
 
     #[test]
@@ -194,8 +194,8 @@ mod tests {
                 assert!(b.name == "project");
                 assert!(b.items.len() == 1);
 
-                let file_entry = b.items.first().unwrap();
-                assert!(matches!(file_entry, ItemType::File(_)));
+                let file_record = b.items.first().unwrap();
+                assert!(matches!(file_record, ItemType::File(_)));
             } else {
                 panic!("Expected project folder");
             }
@@ -258,8 +258,8 @@ mod tests {
                 assert!(b.name == "project");
                 assert!(b.items.len() == 1);
 
-                let file_entry = b.items.first().unwrap();
-                assert!(matches!(file_entry, ItemType::File(_)));
+                let file_record = b.items.first().unwrap();
+                assert!(matches!(file_record, ItemType::File(_)));
             } else {
                 panic!("Expected project folder");
             }
@@ -269,7 +269,7 @@ mod tests {
     }
 
     #[test]
-    fn separate_file_creates_own_entry() {
+    fn separate_file_creates_own_record() {
         let mut tree = FileTree::new();
 
         let file_data_1 = FileData {
@@ -322,10 +322,10 @@ mod tests {
                 assert!(b.name == "project");
                 assert!(b.items.len() == 2);
 
-                let file_entry_1 = b.items.first().unwrap();
-                let file_entry_2 = b.items.last().unwrap();
-                assert!(matches!(file_entry_1, ItemType::File(_)));
-                assert!(matches!(file_entry_2, ItemType::File(_)));
+                let file_record_1 = b.items.first().unwrap();
+                let file_record_2 = b.items.last().unwrap();
+                assert!(matches!(file_record_1, ItemType::File(_)));
+                assert!(matches!(file_record_2, ItemType::File(_)));
             } else {
                 panic!("Expected project folder");
             }
@@ -388,8 +388,8 @@ mod tests {
                 assert!(b.name == "project");
                 assert!(b.items.len() == 1);
 
-                let file_entry = b.items.first().unwrap();
-                assert!(matches!(file_entry, ItemType::File(_)));
+                let file_record = b.items.first().unwrap();
+                assert!(matches!(file_record, ItemType::File(_)));
             } else {
                 panic!("Expected project folder");
             }
@@ -398,8 +398,8 @@ mod tests {
                 assert!(b.name == "test");
                 assert!(b.items.len() == 1);
 
-                let file_entry = b.items.first().unwrap();
-                assert!(matches!(file_entry, ItemType::File(_)));
+                let file_record = b.items.first().unwrap();
+                assert!(matches!(file_record, ItemType::File(_)));
             } else {
                 panic!("Expected test folder");
             }

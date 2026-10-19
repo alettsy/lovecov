@@ -5,21 +5,21 @@ use std::{
 
 use crate::{
     cli::LovecovArgs,
-    entry::{entry_builder::EntryBuilder, file_tree::FileTree, record::Record},
+    record::{field::Field, file_tree::FileTree, record::RecordBuilder},
     errors::LovecovError,
     output::generator::Generator,
 };
 
 pub struct Lovecov<R> {
     tree: FileTree,
-    current_entry: Option<EntryBuilder>,
+    current_record: Option<RecordBuilder>,
     output_generator: Generator,
     file: R,
 }
 
 impl Lovecov<BufReader<File>> {
     pub fn from_args(args: LovecovArgs) -> Result<Self, LovecovError> {
-        let file = File::open(&args.file_path).map_err(|_| LovecovError::FileReadError)?;
+        let file = File::open(&args.file_path).map_err(|_| LovecovError::FileRead)?;
         let reader = BufReader::new(file);
 
         Self::from_reader(args, reader)
@@ -32,7 +32,7 @@ impl<R: BufRead> Lovecov<R> {
 
         Ok(Self {
             tree: FileTree::new(),
-            current_entry: None,
+            current_record: None,
             output_generator: generator,
             file: reader,
         })
@@ -43,33 +43,33 @@ impl<R: BufRead> Lovecov<R> {
 
         for (i, line) in file.lines().enumerate() {
             let line_number = i + 1;
-            let line = line.map_err(|_| LovecovError::FileReadError)?;
+            let line = line.map_err(|_| LovecovError::FileRead)?;
 
             if line.is_empty() {
                 continue;
             }
 
-            let record = Record::from_line(&line).map_err(|e| e.at_line(line_number))?;
+            let record = Field::from_line(&line).map_err(|e| e.at_line(line_number))?;
 
-            if self.current_entry.is_none()
-                && let Record::SourceFile(_) = record
+            if self.current_record.is_none()
+                && let Field::SourceFile(_) = record
             {
-                self.current_entry = Some(EntryBuilder::new());
+                self.current_record = Some(RecordBuilder::new());
             }
 
-            if let Some(ref mut g) = self.current_entry {
+            if let Some(ref mut g) = self.current_record {
                 if !g.is_done() {
-                    g.process_record(record)
+                    g.process_field(record)
                         .map_err(|e| e.at_line(line_number))?;
                 }
 
                 if g.is_done() {
-                    let entry = g
-                        .entry
+                    let record = g
+                        .record
                         .clone()
-                        .expect("Failed to get entry when end reached");
-                    self.tree.add_file(entry)?;
-                    self.current_entry = None;
+                        .expect("Failed to get record when end reached");
+                    self.tree.add_file(record)?;
+                    self.current_record = None;
                 }
             }
         }

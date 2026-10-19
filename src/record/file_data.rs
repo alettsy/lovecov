@@ -2,7 +2,7 @@ use std::{cmp, collections::HashMap};
 
 use crate::{
     constants,
-    entry::parts::{Function, Line},
+    record::parts::{Function, Line},
 };
 
 pub enum ItemType {

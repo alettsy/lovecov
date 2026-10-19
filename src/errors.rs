@@ -5,14 +5,14 @@ use std::{
 
 pub enum LovecovError {
     ErrorAtLine(usize, Box<LovecovError>),
-    FileReadError,
-    FileWriteError,
-    InvalidStartToken,
-    MissingToken,
-    UnknownToken(String),
-    RecordFormatError(String),
-    RepeatedSourceTokenError,
-    TreeError(String),
+    FileRead,
+    FileWrite,
+    MissingTag,
+    UnknownTag(String),
+    InvalidStartTag,
+    RepeatedSourceTag,
+    RecordFormat(String),
+    Tree(String),
 }
 
 impl LovecovError {
@@ -24,24 +24,24 @@ impl LovecovError {
 impl Display for LovecovError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LovecovError::FileReadError => writeln!(f, "Failed to read provided file"),
-            LovecovError::MissingToken => writeln!(f, "Expected token, but found nothing"),
-            LovecovError::RecordFormatError(token) => {
-                writeln!(f, "Record for token '{}' invalid", token)
+            LovecovError::FileRead => writeln!(f, "Failed to read provided file"),
+            LovecovError::MissingTag => writeln!(f, "Expected tag, but found nothing"),
+            LovecovError::RecordFormat(tag) => {
+                writeln!(f, "Record for tag '{}' invalid", tag)
             }
-            LovecovError::TreeError(message) => writeln!(f, "{}", message),
-            LovecovError::UnknownToken(token) => {
-                writeln!(f, "Unknown token '{}'", token)
+            LovecovError::Tree(message) => writeln!(f, "{}", message),
+            LovecovError::UnknownTag(tag) => {
+                writeln!(f, "Unknown tag '{}'", tag)
             }
             LovecovError::ErrorAtLine(line, error) => {
                 writeln!(f, "Error in file at line {}", line)?;
                 Display::fmt(error, f)
             }
-            LovecovError::InvalidStartToken => writeln!(f, "Invalid file entry start token"),
-            LovecovError::RepeatedSourceTokenError => {
-                writeln!(f, "Source file token repeated in entry")
+            LovecovError::InvalidStartTag => writeln!(f, "Invalid file record start tag"),
+            LovecovError::RepeatedSourceTag => {
+                writeln!(f, "Source file tag repeated in record")
             }
-            LovecovError::FileWriteError => writeln!(f, "Failed to write to output file"),
+            LovecovError::FileWrite => writeln!(f, "Failed to write to output file"),
         }
     }
 }

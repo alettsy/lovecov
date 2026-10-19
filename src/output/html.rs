@@ -3,12 +3,12 @@ use std::fs;
 
 use crate::{
     constants,
-    entry::{
+    errors::LovecovError,
+    output::OutputGenerator,
+    record::{
         file_data::{FolderData, ItemType},
         file_tree::FileTree,
     },
-    errors::LovecovError,
-    output::OutputGenerator,
     utils,
 };
 
@@ -17,9 +17,9 @@ pub struct HtmlOutput;
 impl OutputGenerator for HtmlOutput {
     fn generate(tree: &FileTree) -> Result<(), LovecovError> {
         let mut output = String::from(HTML_TEMPLATE_START);
-        Self::generate_html(&tree.root, &mut output).map_err(|_| LovecovError::FileWriteError)?;
+        Self::generate_html(&tree.root, &mut output).map_err(|_| LovecovError::FileWrite)?;
         output.push_str(HTML_TEMPLATE_END);
-        fs::write(constants::HTML_FILE, output).map_err(|_| LovecovError::FileWriteError)
+        fs::write(constants::HTML_FILE, output).map_err(|_| LovecovError::FileWrite)
     }
 }
 
@@ -30,8 +30,8 @@ impl HtmlOutput {
                 ItemType::File(file) => {
                     writeln!(output, r#"<div class="file row">"#).map_err(|_| ())?;
                     writeln!(output, r#"<div class="name">{}</div>"#, file.name).map_err(|_| ())?;
-                    Self::write_line_entry(output, file.line_count, file.line_hit_count)?;
-                    Self::write_function_entry(
+                    Self::write_line_data(output, file.line_count, file.line_hit_count)?;
+                    Self::write_function_data(
                         output,
                         file.function_count,
                         file.function_hit_count,
@@ -43,8 +43,8 @@ impl HtmlOutput {
                     writeln!(output, r#"<summary class="row">"#).map_err(|_| ())?;
                     writeln!(output, r#"<div class="name">{}</div>"#, folder.name)
                         .map_err(|_| ())?;
-                    Self::write_line_entry(output, folder.line_count, folder.line_hit_count)?;
-                    Self::write_function_entry(
+                    Self::write_line_data(output, folder.line_count, folder.line_hit_count)?;
+                    Self::write_function_data(
                         output,
                         folder.function_count,
                         folder.function_hit_count,
@@ -59,18 +59,18 @@ impl HtmlOutput {
         Ok(())
     }
 
-    fn write_line_entry(output: &mut String, lines_total: u32, lines_hit: u32) -> Result<(), ()> {
+    fn write_line_data(output: &mut String, lines_total: u32, lines_hit: u32) -> Result<(), ()> {
         let percentage = utils::calc_percent(lines_hit as f32, lines_total as f32);
 
         writeln!(
             output,
-            r#"<div class="data-entry">{} / {}</div>"#,
+            r#"<div class="data-record">{} / {}</div>"#,
             lines_hit, lines_total
         )
         .map_err(|_| ())?;
         writeln!(
             output,
-            r#"<div class="data-entry">{:.2} %</div>"#,
+            r#"<div class="data-record">{:.2} %</div>"#,
             percentage
         )
         .map_err(|_| ())?;
@@ -78,7 +78,7 @@ impl HtmlOutput {
         Ok(())
     }
 
-    fn write_function_entry(
+    fn write_function_data(
         output: &mut String,
         functions_total: u32,
         functions_hit: u32,
@@ -87,13 +87,13 @@ impl HtmlOutput {
 
         writeln!(
             output,
-            r#"<div class="data-entry">{} / {}</div>"#,
+            r#"<div class="data-record">{} / {}</div>"#,
             functions_hit, functions_total
         )
         .map_err(|_| ())?;
         writeln!(
             output,
-            r#"<div class="data-entry">{:.2} %</div>"#,
+            r#"<div class="data-record">{:.2} %</div>"#,
             percentage
         )
         .map_err(|_| ())?;
@@ -159,7 +159,7 @@ const HTML_TEMPLATE_START: &str = r#"<!doctype html>
                 gap: 0.75rem;
             }
 
-            .data-entry {
+            .data-record {
                 width: 8.5rem;
                 text-align: right;
             }
@@ -173,10 +173,10 @@ const HTML_TEMPLATE_START: &str = r#"<!doctype html>
     <div class="wrapper">
         <div class="header">
             <div class="name">Name</div>
-            <div class="data-entry">Lines</div>
-            <div class="data-entry">Line Coverage</div>
-            <div class="data-entry">Functions</div>
-            <div class="data-entry">Function Coverage</div>
+            <div class="data-record">Lines</div>
+            <div class="data-record">Line Coverage</div>
+            <div class="data-record">Functions</div>
+            <div class="data-record">Function Coverage</div>
         </div>
         <hr />"#;
 

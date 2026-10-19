@@ -1,5 +1,5 @@
 use crate::{
-    entry::file_tree::FileTree,
+    record::file_tree::FileTree,
     errors::LovecovError,
     output::{OutputGenerator, html::HtmlOutput, summary::SummaryOutput},
 };

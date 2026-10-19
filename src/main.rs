@@ -4,7 +4,7 @@ use crate::{cli::LovecovArgs, errors::LovecovError, lovecov::Lovecov};
 
 mod cli;
 mod constants;
-mod entry;
+mod record;
 mod errors;
 mod lovecov;
 mod output;

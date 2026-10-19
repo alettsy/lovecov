@@ -8,11 +8,11 @@ According to the lcov docs:
 
 > LCOV is a tool to manipulate and display information about what parts of a program are actually executed (i.e. "covered") while running a particular test case or set of testcases
 
-Essentially, it is a representation of code test coverage in a simple line-by-line record format. It also provides some other helpful tools to manipulate it, such as `genhtml`.
+Essentially, it is a representation of code test coverage in a simple line-by-line format. It also provides some other helpful tools to manipulate it, such as `genhtml`.
 
 ### Records
 
-| Record        | Name                   | Format            |
+| Tag           | Name                   | Format            |
 | ------------- | ---------------------- | ----------------- |
 | TN            | Test name              | TN:app_test.dart  |
 | SF            | Source file            | SF:/lib/file.dart |
@@ -28,9 +28,9 @@ Essentially, it is a representation of code test coverage in a simple line-by-li
 | LH            | Branches hit           | BRH:5             |
 | end_of_record | End of record          | end_of_record     |
 
-### Entry
+### Record
 
-Each entry (or group of records) in an lcov file starts with a `TN` followed by an `SF`, with the rest in-between, and finally ending with an `end_of_record`.
+Each record (or group of fields) in an lcov file starts with a `TN` followed by an `SF`, with the rest in-between, and finally ending with an `end_of_record`.
 
 ### Example valid lcov
 

@@ -1,6 +1,6 @@
 use crate::{constants, errors::LovecovError};
 
-pub enum Record {
+pub enum Field {
     TestName,
     SourceFile(String),
     FunctionName(u32, String),
@@ -16,80 +16,79 @@ pub enum Record {
     End,
 }
 
-impl Record {
+impl Field {
     pub fn from_line(line: &str) -> Result<Self, LovecovError> {
-        let parts: Vec<&str> = line.split(constants::TOKEN_SPLIT).collect();
+        let parts: Vec<&str> = line.split(constants::TAG_SPLIT).collect();
 
         if parts.is_empty() {
-            return Err(LovecovError::MissingToken);
+            return Err(LovecovError::MissingTag);
         }
 
-        let token = parts.first().copied().ok_or(LovecovError::MissingToken)?;
+        let tag = parts.first().copied().ok_or(LovecovError::MissingTag)?;
 
         let data = parts.get(1).copied();
 
-        Self::from_token_and_data(token, data)
+        Self::from_tag_and_data(tag, data)
     }
 
-    fn from_token_and_data(token: &str, data: Option<&str>) -> Result<Self, LovecovError> {
-        let token_str = token.to_string().to_lowercase();
+    fn from_tag_and_data(tag: &str, data: Option<&str>) -> Result<Self, LovecovError> {
+        let tag_str = tag.to_string().to_lowercase();
 
-        if token_str == constants::END_OF_RECORD {
-            return Ok(Record::End);
+        if tag_str == constants::END_OF_RECORD {
+            return Ok(Field::End);
         }
 
-        if token_str == constants::TEST_NAME {
-            return Ok(Record::TestName);
+        if tag_str == constants::TEST_NAME {
+            return Ok(Field::TestName);
         }
 
         let data = data
-            .ok_or(LovecovError::RecordFormatError(token.into()))?
+            .ok_or(LovecovError::RecordFormat(tag.into()))?
             .to_string();
 
-        let data =
-            Self::extract_string(data).ok_or(LovecovError::RecordFormatError(token.into()))?;
+        let data = Self::extract_string(data).ok_or(LovecovError::RecordFormat(tag.into()))?;
 
-        match token_str.as_str() {
-            constants::SOURCE_FILE => Ok(Record::SourceFile(data)),
+        match tag_str.as_str() {
+            constants::SOURCE_FILE => Ok(Field::SourceFile(data)),
             constants::FUNC_NAME => {
                 let values = Self::process_num_string(data)
-                    .map_err(|_| LovecovError::RecordFormatError(token.into()))?;
-                Ok(Record::FunctionName(values.0, values.1))
+                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                Ok(Field::FunctionName(values.0, values.1))
             }
-            constants::FUN_EXEC_COUNT => {
+            constants::FUNC_EXEC_COUNT => {
                 let values = Self::process_num_string(data)
-                    .map_err(|_| LovecovError::RecordFormatError(token.into()))?;
-                Ok(Record::FunctionExecCount(values.0, values.1))
+                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                Ok(Field::FunctionExecCount(values.0, values.1))
             }
             constants::FUNC_COUNT => {
                 let count = Self::process_num(data)
-                    .map_err(|_| LovecovError::RecordFormatError(token.into()))?;
-                Ok(Record::FunctionCount(count))
+                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                Ok(Field::FunctionCount(count))
             }
             constants::FUNC_HIT_COUNT => {
                 let count = Self::process_num(data)
-                    .map_err(|_| LovecovError::RecordFormatError(token.into()))?;
-                Ok(Record::FunctionHitCount(count))
+                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                Ok(Field::FunctionHitCount(count))
             }
             constants::LINE_EXEC_COUNT => {
                 let values = Self::process_double_num(data)
-                    .map_err(|_| LovecovError::RecordFormatError(token.into()))?;
-                Ok(Record::LineExecCount(values.0, values.1))
+                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                Ok(Field::LineExecCount(values.0, values.1))
             }
             constants::LINE_COUNT => {
                 let count = Self::process_num(data)
-                    .map_err(|_| LovecovError::RecordFormatError(token.into()))?;
-                Ok(Record::LineCount(count))
+                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                Ok(Field::LineCount(count))
             }
             constants::LINE_HIT_COUNT => {
                 let count = Self::process_num(data)
-                    .map_err(|_| LovecovError::RecordFormatError(token.into()))?;
-                Ok(Record::LineHitCount(count))
+                    .map_err(|_| LovecovError::RecordFormat(tag.into()))?;
+                Ok(Field::LineHitCount(count))
             }
-            constants::BRANCH_DATA => Ok(Record::BranchCoverageData),
-            constants::BRANCH_COUNT => Ok(Record::BranchCount),
-            constants::BRANCH_HIT_COUNT => Ok(Record::BranchHitCount),
-            token => Err(LovecovError::UnknownToken(token.into())),
+            constants::BRANCH_DATA => Ok(Field::BranchCoverageData),
+            constants::BRANCH_COUNT => Ok(Field::BranchCount),
+            constants::BRANCH_HIT_COUNT => Ok(Field::BranchHitCount),
+            _ => Err(LovecovError::UnknownTag(tag.into())),
         }
     }
 
@@ -154,7 +153,7 @@ mod tests {
         ];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_ok());
         }
     }
@@ -164,7 +163,7 @@ mod tests {
         let cases = ["SF:", "SF: "];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_err());
         }
     }
@@ -174,7 +173,7 @@ mod tests {
         let cases = ["LH:0", "LH:2"];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_ok());
         }
     }
@@ -184,7 +183,7 @@ mod tests {
         let cases = ["LH:", "LH: ", "LH:-1", "LH:asdas"];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_err());
         }
     }
@@ -194,7 +193,7 @@ mod tests {
         let cases = ["LF:0", "LF:2"];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_ok());
         }
     }
@@ -204,7 +203,7 @@ mod tests {
         let cases = ["LF:", "LF: ", "LF:-1", "LF:asdas"];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_err());
         }
     }
@@ -214,7 +213,7 @@ mod tests {
         let cases = ["FNF:0", "FNF:2"];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_ok());
         }
     }
@@ -224,7 +223,7 @@ mod tests {
         let cases = ["FNF:", "FNF: ", "FNF:-1", "FNF:asdas"];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_err());
         }
     }
@@ -234,7 +233,7 @@ mod tests {
         let cases = ["FNH:0", "FNH:2"];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_ok());
         }
     }
@@ -244,7 +243,7 @@ mod tests {
         let cases = ["FNH:", "FNH: ", "FNH:-1", "FNH:asdas"];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_err());
         }
     }
@@ -254,7 +253,7 @@ mod tests {
         let cases = ["DA:1,2", "DA:111,2222", "DA:2,-"];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_ok());
         }
     }
@@ -274,7 +273,7 @@ mod tests {
         ];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_err());
         }
     }
@@ -284,7 +283,7 @@ mod tests {
         let cases = ["FNDA:1,func", "FNDA:111,function_that_is_long"];
 
         for case in cases {
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_ok());
         }
     }
@@ -305,7 +304,7 @@ mod tests {
 
         for case in cases {
             println!("'{}'", case);
-            let record = Record::from_line(case);
+            let record = Field::from_line(case);
             assert!(record.is_err());
         }
     }

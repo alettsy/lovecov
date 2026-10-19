@@ -1,5 +1,5 @@
 use crate::{
-    entry::{
+    record::{
         file_data::{FolderData, ItemType},
         file_tree::FileTree,
     },

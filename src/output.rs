@@ -1,4 +1,4 @@
-use crate::{entry::file_tree::FileTree, errors::LovecovError};
+use crate::{record::file_tree::FileTree, errors::LovecovError};
 
 pub mod generator;
 pub mod html;
