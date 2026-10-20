@@ -26,7 +26,12 @@ impl OutputGenerator for HtmlOutput {
 
 impl HtmlOutput {
     fn generate_html(folder: &FolderData, output: &mut dyn Write) -> Result<(), ()> {
-        for folder in folder.folders.values() {
+        let mut folder_names: Vec<_> = folder.folders.keys().cloned().collect();
+        folder_names.sort();
+
+        for name in folder_names {
+            let folder = folder.folders.get(&name).unwrap();
+
             writeln!(output, "<details>").map_err(|_| ())?;
             writeln!(output, r#"<summary class="row">"#).map_err(|_| ())?;
             writeln!(output, r#"<div class="name">{}</div>"#, folder.name).map_err(|_| ())?;
@@ -37,7 +42,12 @@ impl HtmlOutput {
             writeln!(output, "</details>").map_err(|_| ())?;
         }
 
-        for file in folder.files.values() {
+        let mut file_names: Vec<_> = folder.files.keys().cloned().collect();
+        file_names.sort();
+
+        for name in file_names {
+            let file = folder.files.get(&name).unwrap();
+
             writeln!(output, r#"<div class="file row">"#).map_err(|_| ())?;
             writeln!(output, r#"<div class="name">{}</div>"#, file.name).map_err(|_| ())?;
             Self::write_line_data(output, file.line_count, file.line_hit_count)?;
