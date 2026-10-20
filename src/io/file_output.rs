@@ -3,8 +3,8 @@ use std::{path::Path, rc::Rc};
 use regex::Regex;
 
 use crate::{
-    errors::LovecovError, output::utils::file_system::FileSystem,
-    output::utils::file_system::RealFileSystem,
+    errors::LovecovError,
+    io::file_system::{FileSystem, RealFileSystem},
 };
 
 #[derive(Clone)]

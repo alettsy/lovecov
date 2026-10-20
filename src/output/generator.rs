@@ -2,7 +2,8 @@ use crate::{
     cli::{args::LovecovArgs, generator_type::GeneratorType},
     constants,
     errors::LovecovError,
-    output::{OutputGenerator, utils::file_output::FileOutput, html::HtmlOutput, summary::SummaryOutput},
+    io::file_output::FileOutput,
+    output::{OutputGenerator, html::HtmlOutput, summary::SummaryOutput},
     parser::file_tree::FileTree,
 };
 

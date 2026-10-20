@@ -9,6 +9,7 @@ mod lovecov;
 mod output;
 mod parser;
 mod utils;
+mod io;
 
 fn main() -> Result<(), LovecovError> {
     let args = LovecovArgs::parse();

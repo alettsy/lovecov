@@ -2,7 +2,6 @@ use crate::{errors::LovecovError, parser::file_tree::FileTree};
 
 pub mod generator;
 
-mod utils;
 mod html;
 mod summary;
 
