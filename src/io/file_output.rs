@@ -1,4 +1,4 @@
-use std::{path::Path, rc::Rc};
+use std::{io::Write, path::Path, rc::Rc};
 
 use regex::Regex;
 
@@ -23,14 +23,14 @@ impl FileOutput {
         }
     }
 
-    pub fn write(&self, content: &str) -> Result<(), LovecovError> {
+    pub fn open_write(&self) -> Result<Box<dyn Write>, LovecovError> {
         let output_path = self
             .process_path()
             .map_err(|_| LovecovError::InvalidFilePath)?;
+
         self.file_sys
-            .write(Path::new(&output_path), content.as_bytes())
-            .map_err(|_| LovecovError::FileWrite)?;
-        Ok(())
+            .open_write(Path::new(&output_path))
+            .map_err(|_| LovecovError::FileWrite)
     }
 
     fn process_path(&self) -> Result<String, ()> {
@@ -101,8 +101,8 @@ mod tests {
             Ok(())
         }
 
-        fn write(&self, _path: &Path, _contents: &[u8]) -> std::io::Result<()> {
-            Ok(())
+        fn open_write(&self, _path: &Path) -> std::io::Result<Box<dyn Write>> {
+            Ok(Box::new(vec![]))
         }
     }
 

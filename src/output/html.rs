@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use std::io::Write;
 
 use crate::{
     errors::LovecovError,
@@ -17,17 +17,18 @@ pub struct HtmlOutput {
 
 impl OutputGenerator for HtmlOutput {
     fn generate(&self, tree: &FileTree) -> Result<(), LovecovError> {
-        let mut output = String::from(HTML_TEMPLATE_START);
-        Self::generate_html(&tree.root, &mut output).map_err(|_| LovecovError::FileWrite)?;
-        output.push_str(HTML_TEMPLATE_END);
+        let mut writer = self.file_out.open_write()?;
+        writeln!(writer, "{}", HTML_TEMPLATE_START).map_err(|_| LovecovError::FileWrite)?;
 
-        self.file_out.write(&output)?;
+        Self::generate_html(&tree.root, &mut writer).map_err(|_| LovecovError::FileWrite)?;
+        writeln!(writer, "{}", HTML_TEMPLATE_END).map_err(|_| LovecovError::FileWrite)?;
+
         Ok(())
     }
 }
 
 impl HtmlOutput {
-    fn generate_html(folder: &FolderData, output: &mut String) -> Result<(), ()> {
+    fn generate_html(folder: &FolderData, output: &mut dyn Write) -> Result<(), ()> {
         for item in &folder.items {
             match item {
                 ItemType::File(file) => {
@@ -62,7 +63,7 @@ impl HtmlOutput {
         Ok(())
     }
 
-    fn write_line_data(output: &mut String, lines_total: u32, lines_hit: u32) -> Result<(), ()> {
+    fn write_line_data(output: &mut dyn Write, lines_total: u32, lines_hit: u32) -> Result<(), ()> {
         let percentage = utils::calc_percent(lines_hit as f32, lines_total as f32);
 
         writeln!(
@@ -82,7 +83,7 @@ impl HtmlOutput {
     }
 
     fn write_function_data(
-        output: &mut String,
+        output: &mut dyn Write,
         functions_total: u32,
         functions_hit: u32,
     ) -> Result<(), ()> {

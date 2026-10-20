@@ -1,8 +1,8 @@
-use std::{fs, path::Path};
+use std::{fs, io::Write, path::Path};
 
 pub trait FileSystem {
-    fn write(&self, path: &Path, contents: &[u8]) -> std::io::Result<()>;
     fn create_dir_all(&self, path: &Path) -> std::io::Result<()>;
+    fn open_write(&self, path: &Path) -> std::io::Result<Box<dyn Write>>;
 }
 
 pub struct RealFileSystem;
@@ -12,7 +12,7 @@ impl FileSystem for RealFileSystem {
         std::fs::create_dir_all(path)
     }
 
-    fn write(&self, path: &Path, contents: &[u8]) -> std::io::Result<()> {
-        fs::write(path, contents)
+    fn open_write(&self, path: &Path) -> std::io::Result<Box<dyn Write>> {
+        Ok(Box::new(fs::File::create(path)?))
     }
 }
