@@ -73,13 +73,17 @@ You can also specify your own output path with `--output-path`.
 
 If you get stuck, run `lovecov --help` !
 
-### Example
+### Examples
 
 ```bash
+# output coverage.html to local directory
 lovecov my_lcov.info html
 ```
 
-This will output `coverage.html` to the current directory.
+```bash
+# output to /my/path/to/report.html
+lovecov my_lcov.info html --output-path=/my/path/to/report.html
+```
 
 ## Screenshots
 
@@ -90,6 +94,10 @@ This will output `coverage.html` to the current directory.
 ### HTML
 
 ![HTML](docs/html.png)
+
+### CSV
+
+![CSV](docs/csv.png)
 
 ## Contributing
 
