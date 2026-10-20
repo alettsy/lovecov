@@ -2,6 +2,7 @@ use crate::{errors::LovecovError, parser::file_tree::FileTree};
 
 pub mod generator;
 
+mod csv;
 mod html;
 mod summary;
 

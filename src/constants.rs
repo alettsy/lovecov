@@ -18,3 +18,4 @@ pub const HIT_EMPTY: &str = "-";
 
 pub const ROOT_FOLDER_NAME: &str = "root";
 pub const HTML_FILE: &str = "coverage.html";
+pub const CSV_FILE: &str = "coverage.csv";

@@ -4,4 +4,5 @@ use clap::ValueEnum;
 pub enum GeneratorType {
     Summary,
     Html,
+    Csv,
 }

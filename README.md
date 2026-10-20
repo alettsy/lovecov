@@ -67,6 +67,9 @@ All outputs currently supported:
 
 1. `summary` - simple printed summary
 2. `html` - single, static HTML file with navigatable tabs
+3. `csv` - single CSV file outlining file-level stats
+
+You can also specify your own output path with `--output-path`.
 
 If you get stuck, run `lovecov --help` !
 
@@ -96,7 +99,7 @@ See [CONTRIBUTING](CONTRIBUTING.md) for how.
 
 ## Planned features
 
-- More output formats, such as CSV
+- More output formats
 - Support branch data
 - Improvements to HTML output, such as progress bars and color-coding
 - Utilities options, such as omitting files from outputs

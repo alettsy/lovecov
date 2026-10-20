@@ -3,13 +3,14 @@ use crate::{
     constants,
     errors::LovecovError,
     io::file_output::FileOutput,
-    output::{OutputGenerator, html::HtmlOutput, summary::SummaryOutput},
+    output::{OutputGenerator, csv::CsvOutput, html::HtmlOutput, summary::SummaryOutput},
     parser::file_tree::FileTree,
 };
 
 pub enum Generator {
     Summary,
     Html(FileOutput),
+    Csv(FileOutput),
 }
 
 impl Generator {
@@ -20,6 +21,10 @@ impl Generator {
                 args.output_path,
                 constants::HTML_FILE.to_string(),
             )),
+            GeneratorType::Csv => Generator::Csv(FileOutput::from_path_and_default(
+                args.output_path,
+                constants::CSV_FILE.to_string(),
+            )),
         }
     }
 
@@ -29,6 +34,11 @@ impl Generator {
             Generator::Html(file_out) => {
                 let file_out = file_out.clone();
                 let out = HtmlOutput { file_out };
+                out.generate(tree)?
+            }
+            Generator::Csv(file_out) => {
+                let file_out = file_out.clone();
+                let out = CsvOutput { file_out };
                 out.generate(tree)?
             }
         }
