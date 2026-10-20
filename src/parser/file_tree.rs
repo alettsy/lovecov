@@ -1,7 +1,9 @@
+use std::collections::hash_map::Entry;
+
 use crate::{
     constants,
     errors::LovecovError,
-    parser::file_data::{FileData, FolderData, ItemType},
+    parser::file_data::{FileData, FolderData},
 };
 
 pub struct FileTree {
@@ -15,98 +17,33 @@ impl FileTree {
         }
     }
 
-    pub fn add_file(&mut self, sf: FileData) -> Result<(), LovecovError> {
-        Self::add_file_recursive(&mut self.root.items, sf.path.clone(), sf)?;
+    pub fn add_file(&mut self, file: FileData) -> Result<(), LovecovError> {
+        let mut current = &mut self.root;
+
+        for part in &file.path {
+            current = current
+                .folders
+                .entry(part.clone())
+                .or_insert_with(|| Box::new(FolderData::new(part)))
+                .as_mut();
+        }
+
+        match current.files.entry(file.name.clone()) {
+            Entry::Vacant(entry) => {
+                entry.insert(file);
+            }
+            Entry::Occupied(mut entry) => {
+                let existing = entry.get_mut();
+                let merged = existing.merge_with(&file);
+                *existing = merged;
+            }
+        }
+
         Ok(())
     }
 
-    fn add_file_recursive(
-        items: &mut Vec<ItemType>,
-        mut path: Vec<String>,
-        file: FileData,
-    ) -> Result<(), LovecovError> {
-        if path.is_empty() {
-            let file_index = items.iter().position(|f| match f {
-                ItemType::File(f) => file.name == f.name,
-                ItemType::Folder(_) => false,
-            });
-
-            return if let Some(index) = file_index {
-                match &mut items[index] {
-                    ItemType::File(found_file) => {
-                        let merged_file = file.merge_with(found_file);
-                        items[index] = ItemType::File(merged_file);
-                        Ok(())
-                    }
-                    ItemType::Folder(_) => Err(LovecovError::Tree(
-                        "Expected file, but points to folder".into(),
-                    )),
-                }
-            } else {
-                items.push(ItemType::File(file));
-                Ok(())
-            };
-        }
-
-        let name = path.remove(0);
-
-        let folder_index = items.iter().position(|f| match f {
-            ItemType::File(_) => false,
-            ItemType::Folder(folder) => folder.name == name,
-        });
-
-        if folder_index.is_none() {
-            items.push(ItemType::Folder(FolderData::new(&name)));
-        }
-
-        let index = items
-            .iter()
-            .position(|f| match f {
-                ItemType::File(_) => false,
-                ItemType::Folder(folder) => folder.name == name,
-            })
-            .unwrap();
-
-        match &mut items[index] {
-            ItemType::Folder(folder) => {
-                Self::add_file_recursive(&mut folder.items, path, file)?;
-                Ok(())
-            }
-            ItemType::File(_) => Err(LovecovError::Tree(
-                "Path matched with file, not folder. Bad SF".into(),
-            )),
-        }
-    }
-
     pub fn post_process(&mut self) {
-        Self::post_process_recursive(&mut self.root);
-    }
-
-    fn post_process_recursive(parent: &mut FolderData) {
-        parent.items.sort_by(|a, b| match (a, b) {
-            (ItemType::Folder(a_data), ItemType::Folder(b_data)) => a_data.name.cmp(&b_data.name),
-            (ItemType::File(a_data), ItemType::File(b_data)) => a_data.name.cmp(&b_data.name),
-            (ItemType::Folder(_), ItemType::File(_)) => std::cmp::Ordering::Less,
-            (ItemType::File(_), ItemType::Folder(_)) => std::cmp::Ordering::Greater,
-        });
-
-        for item in &mut parent.items {
-            match item {
-                ItemType::File(file) => {
-                    parent.function_count += file.function_count;
-                    parent.function_hit_count += file.function_hit_count;
-                    parent.line_count += file.line_count;
-                    parent.line_hit_count += file.line_hit_count;
-                }
-                ItemType::Folder(folder) => {
-                    Self::post_process_recursive(folder);
-                    parent.function_count += folder.function_count;
-                    parent.function_hit_count += folder.function_hit_count;
-                    parent.line_count += folder.line_count;
-                    parent.line_hit_count += folder.line_hit_count;
-                }
-            }
-        }
+        self.root.post_process();
     }
 }
 
@@ -119,7 +56,8 @@ mod tests {
     #[test]
     fn new_tree_is_empty() {
         let tree = FileTree::new();
-        assert!(tree.root.items.len() == 0);
+        assert!(tree.root.files.is_empty());
+        assert!(tree.root.folders.is_empty());
     }
 
     #[test]
@@ -150,11 +88,8 @@ mod tests {
 
         tree.add_file(file_data).unwrap();
 
-        assert!(tree.root.items.len() == 1);
-
-        let first_record = tree.root.items.first().unwrap();
-
-        assert!(matches!(first_record, ItemType::File(_)));
+        assert!(tree.root.files.len() == 1);
+        assert!(tree.root.folders.is_empty());
     }
 
     #[test]
@@ -185,22 +120,29 @@ mod tests {
 
         tree.add_file(file_data).unwrap();
 
-        assert!(tree.root.items.len() == 1);
+        assert!(tree.root.folders.len() == 1);
+        assert!(tree.root.files.is_empty());
 
-        if let Some(ItemType::Folder(a)) = tree.root.items.first() {
-            assert!(a.name == "home");
-            assert!(a.items.len() == 1);
-            if let Some(ItemType::Folder(b)) = a.items.first() {
-                assert!(b.name == "project");
-                assert!(b.items.len() == 1);
+        if let Some((_, folder1)) = tree.root.folders.iter().next() {
+            assert!(folder1.folders.len() == 1);
+            assert!(folder1.files.is_empty());
+            assert!(folder1.name == "home");
 
-                let file_record = b.items.first().unwrap();
-                assert!(matches!(file_record, ItemType::File(_)));
+            if let Some((_, folder2)) = folder1.folders.iter().next() {
+                assert!(folder2.files.len() == 1);
+                assert!(folder2.folders.is_empty());
+                assert!(folder2.name == "project");
+
+                if let Some((_, file1)) = folder2.files.iter().next() {
+                    assert!(file1.name == "file1.txt");
+                } else {
+                    panic!("Missing file")
+                }
             } else {
-                panic!("Expected project folder");
+                panic!("Missing project folder")
             }
         } else {
-            panic!("Expected home folder");
+            panic!("Missing home folder")
         }
     }
 
@@ -248,23 +190,29 @@ mod tests {
         tree.add_file(file_data_1).unwrap();
         tree.add_file(file_data_2).unwrap();
 
-        assert!(tree.root.items.len() == 1);
+        assert!(tree.root.folders.len() == 1);
+        assert!(tree.root.files.is_empty());
 
-        if let Some(ItemType::Folder(a)) = tree.root.items.first() {
-            assert!(a.name == "home");
-            assert!(a.items.len() == 1);
+        if let Some((_, folder1)) = tree.root.folders.iter().next() {
+            assert!(folder1.folders.len() == 1);
+            assert!(folder1.files.is_empty());
+            assert!(folder1.name == "home");
 
-            if let Some(ItemType::Folder(b)) = a.items.first() {
-                assert!(b.name == "project");
-                assert!(b.items.len() == 1);
+            if let Some((_, folder2)) = folder1.folders.iter().next() {
+                assert!(folder2.files.len() == 1);
+                assert!(folder2.folders.is_empty());
+                assert!(folder2.name == "project");
 
-                let file_record = b.items.first().unwrap();
-                assert!(matches!(file_record, ItemType::File(_)));
+                if let Some((_, file1)) = folder2.files.iter().next() {
+                    assert!(file1.name == "file1.txt");
+                } else {
+                    panic!("Missing file")
+                }
             } else {
-                panic!("Expected project folder");
+                panic!("Missing project folder")
             }
         } else {
-            panic!("Expected home folder");
+            panic!("Missing home folder")
         }
     }
 
@@ -312,25 +260,35 @@ mod tests {
         tree.add_file(file_data_1).unwrap();
         tree.add_file(file_data_2).unwrap();
 
-        assert!(tree.root.items.len() == 1);
+        assert!(tree.root.folders.len() == 1);
+        assert!(tree.root.files.is_empty());
 
-        if let Some(ItemType::Folder(a)) = tree.root.items.first() {
-            assert!(a.name == "home");
-            assert!(a.items.len() == 1);
+        if let Some((_, folder1)) = tree.root.folders.iter().next() {
+            assert!(folder1.folders.len() == 1);
+            assert!(folder1.files.is_empty());
+            assert!(folder1.name == "home");
 
-            if let Some(ItemType::Folder(b)) = a.items.first() {
-                assert!(b.name == "project");
-                assert!(b.items.len() == 2);
+            if let Some((_, folder2)) = folder1.folders.iter().next() {
+                assert!(folder2.files.len() == 2);
+                assert!(folder2.folders.is_empty());
+                assert!(folder2.name == "project");
 
-                let file_record_1 = b.items.first().unwrap();
-                let file_record_2 = b.items.last().unwrap();
-                assert!(matches!(file_record_1, ItemType::File(_)));
-                assert!(matches!(file_record_2, ItemType::File(_)));
+                if let Some(file1) = folder2.files.get("file1.txt") {
+                    assert!(file1.name == "file1.txt");
+                } else {
+                    panic!("Missing file")
+                }
+
+                if let Some(file1) = folder2.files.get("file2.txt") {
+                    assert!(file1.name == "file2.txt");
+                } else {
+                    panic!("Missing file")
+                }
             } else {
-                panic!("Expected project folder");
+                panic!("Missing project folder")
             }
         } else {
-            panic!("Expected home folder");
+            panic!("Missing home folder")
         }
     }
 
@@ -378,33 +336,43 @@ mod tests {
         tree.add_file(file_data_1).unwrap();
         tree.add_file(file_data_2).unwrap();
 
-        assert!(tree.root.items.len() == 1);
+        assert!(tree.root.folders.len() == 1);
+        assert!(tree.root.files.is_empty());
 
-        if let Some(ItemType::Folder(a)) = tree.root.items.first() {
-            assert!(a.name == "home");
-            assert!(a.items.len() == 2);
+        if let Some((_, folder1)) = tree.root.folders.iter().next() {
+            assert!(folder1.folders.len() == 2);
+            assert!(folder1.files.is_empty());
+            assert!(folder1.name == "home");
 
-            if let Some(ItemType::Folder(b)) = a.items.first() {
-                assert!(b.name == "project");
-                assert!(b.items.len() == 1);
+            if let Some(folder2) = folder1.folders.get("project") {
+                assert!(folder2.files.len() == 1);
+                assert!(folder2.folders.is_empty());
+                assert!(folder2.name == "project");
 
-                let file_record = b.items.first().unwrap();
-                assert!(matches!(file_record, ItemType::File(_)));
+                if let Some((_, file1)) = folder2.files.iter().next() {
+                    assert!(file1.name == "file1.txt");
+                } else {
+                    panic!("Missing file")
+                }
             } else {
-                panic!("Expected project folder");
+                panic!("Missing project folder")
             }
 
-            if let Some(ItemType::Folder(b)) = a.items.last() {
-                assert!(b.name == "test");
-                assert!(b.items.len() == 1);
+            if let Some(folder3) = folder1.folders.get("test") {
+                assert!(folder3.files.len() == 1);
+                assert!(folder3.folders.is_empty());
+                assert!(folder3.name == "test");
 
-                let file_record = b.items.first().unwrap();
-                assert!(matches!(file_record, ItemType::File(_)));
+                if let Some((_, file1)) = folder3.files.iter().next() {
+                    assert!(file1.name == "file1.txt");
+                } else {
+                    panic!("Missing file")
+                }
             } else {
-                panic!("Expected test folder");
+                panic!("Missing test folder")
             }
         } else {
-            panic!("Expected home folder");
+            panic!("Missing home folder")
         }
     }
 
@@ -466,37 +434,43 @@ mod tests {
 
         tree.post_process();
 
-        assert!(tree.root.items.len() == 1);
+        assert!(tree.root.folders.len() == 1);
+        assert!(tree.root.files.is_empty());
 
-        if let Some(ItemType::Folder(a)) = tree.root.items.first() {
-            assert!(a.name == "home");
-            assert!(a.items.len() == 2);
-            assert!(a.function_count == 42);
-            assert!(a.function_hit_count == 16);
-            assert!(a.line_count == 1019);
-            assert!(a.line_hit_count == 641);
+        if let Some((_, folder1)) = tree.root.folders.iter().next() {
+            assert!(folder1.folders.len() == 2);
+            assert!(folder1.files.is_empty());
+            assert!(folder1.name == "home");
+            assert!(folder1.function_count == 42);
+            assert!(folder1.function_hit_count == 16);
+            assert!(folder1.line_count == 1019);
+            assert!(folder1.line_hit_count == 641);
 
-            if let Some(ItemType::Folder(b)) = a.items.first() {
-                assert!(b.name == "project");
-                assert!(b.function_count == 20);
-                assert!(b.function_hit_count == 14);
-                assert!(b.line_count == 689);
-                assert!(b.line_hit_count == 356);
+            if let Some(subfolder1) = folder1.folders.get("test") {
+                assert!(subfolder1.files.len() == 1);
+                assert!(subfolder1.folders.is_empty());
+                assert!(subfolder1.name == "test");
+                assert!(subfolder1.function_count == 22);
+                assert!(subfolder1.function_hit_count == 2);
+                assert!(subfolder1.line_count == 330);
+                assert!(subfolder1.line_hit_count == 285);
             } else {
-                panic!("Expected project folder");
+                panic!("Missing test folder")
             }
 
-            if let Some(ItemType::Folder(b)) = a.items.last() {
-                assert!(b.name == "test");
-                assert!(b.function_count == 22);
-                assert!(b.function_hit_count == 2);
-                assert!(b.line_count == 330);
-                assert!(b.line_hit_count == 285);
+            if let Some(subfolder2) = folder1.folders.get("project") {
+                assert!(subfolder2.files.len() == 2);
+                assert!(subfolder2.folders.is_empty());
+                assert!(subfolder2.name == "project");
+                assert!(subfolder2.function_count == 20);
+                assert!(subfolder2.function_hit_count == 14);
+                assert!(subfolder2.line_count == 689);
+                assert!(subfolder2.line_hit_count == 356);
             } else {
-                panic!("Expected test folder");
+                panic!("Missing project folder")
             }
         } else {
-            panic!("Expected home folder");
+            panic!("Missing home folder")
         }
     }
 }

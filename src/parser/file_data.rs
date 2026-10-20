@@ -5,14 +5,10 @@ use crate::{
     parser::parts::{Function, Line},
 };
 
-pub enum ItemType {
-    File(FileData),
-    Folder(FolderData),
-}
-
 pub struct FolderData {
     pub name: String,
-    pub items: Vec<ItemType>,
+    pub folders: HashMap<String, Box<FolderData>>,
+    pub files: HashMap<String, FileData>,
 
     pub function_count: u32,
     pub function_hit_count: u32,
@@ -120,11 +116,30 @@ impl FolderData {
     pub fn new(name: &str) -> FolderData {
         FolderData {
             name: name.to_string(),
-            items: vec![],
+            files: HashMap::new(),
+            folders: HashMap::new(),
             function_count: 0,
             function_hit_count: 0,
             line_count: 0,
             line_hit_count: 0,
+        }
+    }
+
+    pub fn post_process(&mut self) {
+        for folder in self.folders.values_mut() {
+            folder.post_process();
+
+            self.function_count += folder.function_count;
+            self.function_hit_count += folder.function_hit_count;
+            self.line_count += folder.line_count;
+            self.line_hit_count += folder.line_hit_count;
+        }
+
+        for file in self.files.values() {
+            self.function_count += file.function_count;
+            self.function_hit_count += file.function_hit_count;
+            self.line_count += file.line_count;
+            self.line_hit_count += file.line_hit_count;
         }
     }
 }

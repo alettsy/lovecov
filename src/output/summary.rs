@@ -1,10 +1,7 @@
 use crate::{
-    parser::{
-        file_data::{FolderData, ItemType},
-        file_tree::FileTree,
-    },
     errors::LovecovError,
     output::OutputGenerator,
+    parser::{file_data::FolderData, file_tree::FileTree},
     utils,
 };
 
@@ -39,18 +36,15 @@ impl OutputGenerator for SummaryOutput {
 
 impl SummaryOutput {
     fn generate_summary(folder: &FolderData, summary: &mut SummaryOutputData) {
-        for item in &folder.items {
-            match item {
-                ItemType::File(file) => {
-                    summary.line_total += file.line_count;
-                    summary.line_hit_total += file.line_hit_count;
-                    summary.function_total += file.function_count;
-                    summary.function_hit_total += file.function_hit_count;
-                }
-                ItemType::Folder(folder) => {
-                    Self::generate_summary(folder, summary);
-                }
-            }
+        for file in folder.files.values() {
+            summary.line_total += file.line_count;
+            summary.line_hit_total += file.line_hit_count;
+            summary.function_total += file.function_count;
+            summary.function_hit_total += file.function_hit_count;
+        }
+
+        for folder in folder.folders.values() {
+            Self::generate_summary(folder, summary);
         }
     }
 }

@@ -4,10 +4,7 @@ use crate::{
     errors::LovecovError,
     io::file_output::FileOutput,
     output::OutputGenerator,
-    parser::{
-        file_data::{FolderData, ItemType},
-        file_tree::FileTree,
-    },
+    parser::{file_data::FolderData, file_tree::FileTree},
     utils,
 };
 
@@ -29,35 +26,23 @@ impl OutputGenerator for HtmlOutput {
 
 impl HtmlOutput {
     fn generate_html(folder: &FolderData, output: &mut dyn Write) -> Result<(), ()> {
-        for item in &folder.items {
-            match item {
-                ItemType::File(file) => {
-                    writeln!(output, r#"<div class="file row">"#).map_err(|_| ())?;
-                    writeln!(output, r#"<div class="name">{}</div>"#, file.name).map_err(|_| ())?;
-                    Self::write_line_data(output, file.line_count, file.line_hit_count)?;
-                    Self::write_function_data(
-                        output,
-                        file.function_count,
-                        file.function_hit_count,
-                    )?;
-                    writeln!(output, "</div>").map_err(|_| ())?;
-                }
-                ItemType::Folder(folder) => {
-                    writeln!(output, "<details>").map_err(|_| ())?;
-                    writeln!(output, r#"<summary class="row">"#).map_err(|_| ())?;
-                    writeln!(output, r#"<div class="name">{}</div>"#, folder.name)
-                        .map_err(|_| ())?;
-                    Self::write_line_data(output, folder.line_count, folder.line_hit_count)?;
-                    Self::write_function_data(
-                        output,
-                        folder.function_count,
-                        folder.function_hit_count,
-                    )?;
-                    writeln!(output, "</summary>").map_err(|_| ())?;
-                    Self::generate_html(folder, output)?;
-                    writeln!(output, "</details>").map_err(|_| ())?;
-                }
-            }
+        for folder in folder.folders.values() {
+            writeln!(output, "<details>").map_err(|_| ())?;
+            writeln!(output, r#"<summary class="row">"#).map_err(|_| ())?;
+            writeln!(output, r#"<div class="name">{}</div>"#, folder.name).map_err(|_| ())?;
+            Self::write_line_data(output, folder.line_count, folder.line_hit_count)?;
+            Self::write_function_data(output, folder.function_count, folder.function_hit_count)?;
+            writeln!(output, "</summary>").map_err(|_| ())?;
+            Self::generate_html(folder, output)?;
+            writeln!(output, "</details>").map_err(|_| ())?;
+        }
+
+        for file in folder.files.values() {
+            writeln!(output, r#"<div class="file row">"#).map_err(|_| ())?;
+            writeln!(output, r#"<div class="name">{}</div>"#, file.name).map_err(|_| ())?;
+            Self::write_line_data(output, file.line_count, file.line_hit_count)?;
+            Self::write_function_data(output, file.function_count, file.function_hit_count)?;
+            writeln!(output, "</div>").map_err(|_| ())?;
         }
 
         Ok(())

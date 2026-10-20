@@ -4,10 +4,7 @@ use crate::{
     errors::LovecovError,
     io::file_output::FileOutput,
     output::OutputGenerator,
-    parser::{
-        file_data::{FolderData, ItemType},
-        file_tree::FileTree,
-    },
+    parser::{file_data::FolderData, file_tree::FileTree},
     utils,
 };
 
@@ -28,36 +25,31 @@ impl OutputGenerator for CsvOutput {
 
 impl CsvOutput {
     fn generate_csv(folder: &FolderData, output: &mut dyn Write) -> Result<(), ()> {
-        for item in &folder.items {
-            match item {
-                ItemType::File(file) => {
-                    let func_percent = utils::calc_percent(
-                        file.function_hit_count as f32,
-                        file.function_count as f32,
-                    );
-                    let line_percent =
-                        utils::calc_percent(file.line_hit_count as f32, file.line_count as f32);
-                    let mut path = file.path.join("/");
-                    path.push('/');
-                    path.push_str(&file.name);
+        for file in folder.files.values() {
+            let func_percent =
+                utils::calc_percent(file.function_hit_count as f32, file.function_count as f32);
+            let line_percent =
+                utils::calc_percent(file.line_hit_count as f32, file.line_count as f32);
+            let mut path = file.path.join("/");
+            path.push('/');
+            path.push_str(&file.name);
 
-                    writeln!(
-                        output,
-                        "{},{},{},{},{},{},{}",
-                        path,
-                        file.line_count,
-                        file.line_hit_count,
-                        line_percent,
-                        file.function_count,
-                        file.function_hit_count,
-                        func_percent
-                    )
-                    .map_err(|_| ())?;
-                }
-                ItemType::Folder(folder) => {
-                    Self::generate_csv(folder, output)?;
-                }
-            }
+            writeln!(
+                output,
+                "{},{},{},{},{},{},{}",
+                path,
+                file.line_count,
+                file.line_hit_count,
+                line_percent,
+                file.function_count,
+                file.function_hit_count,
+                func_percent
+            )
+            .map_err(|_| ())?;
+        }
+
+        for folder in folder.folders.values() {
+            Self::generate_csv(folder, output)?;
         }
 
         Ok(())

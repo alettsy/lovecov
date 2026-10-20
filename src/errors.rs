@@ -13,7 +13,6 @@ pub enum LovecovError {
     InvalidStartTag,
     RepeatedSourceTag,
     RecordFormat(String),
-    Tree(String),
 }
 
 impl LovecovError {
@@ -30,7 +29,6 @@ impl Display for LovecovError {
             LovecovError::RecordFormat(tag) => {
                 writeln!(f, "Record for tag '{}' invalid", tag)
             }
-            LovecovError::Tree(message) => writeln!(f, "{}", message),
             LovecovError::UnknownTag(tag) => {
                 writeln!(f, "Unknown tag '{}'", tag)
             }
