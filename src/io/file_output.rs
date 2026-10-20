@@ -1,4 +1,4 @@
-use std::{io::Write, path::Path, rc::Rc};
+use std::{io::Write, path::Path, rc::Rc, sync::OnceLock};
 
 use regex::Regex;
 
@@ -81,12 +81,16 @@ impl FileOutput {
     }
 
     fn is_valid_path(path: &str) -> bool {
-        lazy_static::lazy_static! {
-            static ref PATH_REGEX: Regex = Regex::new(
-                r"^(?:[a-zA-Z]:)?(?:[/\\]?[a-zA-Z0-9_\-\.]+(?:[/\\][a-zA-Z0-9_\-\.]+)*)?$"
-            ).unwrap();
-        }
-        PATH_REGEX.is_match(path)
+        static PATH_REGEX: OnceLock<Regex> = OnceLock::new();
+
+        PATH_REGEX
+            .get_or_init(|| {
+                Regex::new(
+                    r"^(?:[a-zA-Z]:)?(?:[/\\]?[a-zA-Z0-9_\-\.]+(?:[/\\][a-zA-Z0-9_\-\.]+)*)?$",
+                )
+                .unwrap()
+            })
+            .is_match(path)
     }
 }
 
