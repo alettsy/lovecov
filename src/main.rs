@@ -7,7 +7,7 @@ mod constants;
 mod errors;
 mod lovecov;
 mod output;
-mod record;
+mod parser;
 mod utils;
 
 fn main() -> Result<(), LovecovError> {

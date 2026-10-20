@@ -2,8 +2,8 @@ use std::fmt::Write;
 
 use crate::{
     errors::LovecovError,
-    output::{OutputGenerator, file_output::FileOutput},
-    record::{
+    output::{OutputGenerator, utils::file_output::FileOutput},
+    parser::{
         file_data::{FolderData, ItemType},
         file_tree::FileTree,
     },

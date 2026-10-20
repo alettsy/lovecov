@@ -2,8 +2,8 @@ use crate::{
     cli::{args::LovecovArgs, generator_type::GeneratorType},
     constants,
     errors::LovecovError,
-    output::{OutputGenerator, file_output::FileOutput, html::HtmlOutput, summary::SummaryOutput},
-    record::file_tree::FileTree,
+    output::{OutputGenerator, utils::file_output::FileOutput, html::HtmlOutput, summary::SummaryOutput},
+    parser::file_tree::FileTree,
 };
 
 pub enum Generator {

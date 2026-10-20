@@ -1,7 +1,7 @@
 use crate::{
     constants,
-    record::file_data::{FileData, FolderData, ItemType},
     errors::LovecovError,
+    parser::file_data::{FileData, FolderData, ItemType},
 };
 
 pub struct FileTree {
@@ -112,7 +112,7 @@ impl FileTree {
 
 #[cfg(test)]
 mod tests {
-    use crate::record::parts::{Function, Line};
+    use crate::parser::parts::{Function, Line};
 
     use super::*;
 

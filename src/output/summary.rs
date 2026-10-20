@@ -1,5 +1,5 @@
 use crate::{
-    record::{
+    parser::{
         file_data::{FolderData, ItemType},
         file_tree::FileTree,
     },

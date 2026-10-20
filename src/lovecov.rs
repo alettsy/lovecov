@@ -7,7 +7,7 @@ use crate::{
     cli::{args::LovecovArgs, generator_type::GeneratorType},
     errors::LovecovError,
     output::generator::Generator,
-    record::{field::Field, file_tree::FileTree, record::RecordBuilder},
+    parser::{field::Field, file_tree::FileTree, record::RecordBuilder},
 };
 
 pub struct Lovecov<R> {

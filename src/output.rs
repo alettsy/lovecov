@@ -1,9 +1,8 @@
-use crate::{errors::LovecovError, record::file_tree::FileTree};
+use crate::{errors::LovecovError, parser::file_tree::FileTree};
 
 pub mod generator;
 
-mod file_output;
-mod file_system;
+mod utils;
 mod html;
 mod summary;
 
