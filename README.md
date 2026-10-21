@@ -25,6 +25,15 @@
 
 <hr />
 
+Quick links:
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Examples](#examples)
+- [Screenshots](#screenshots)
+- [Contributing](#contributing)
+- [Planned Features](#planned-features)
+
 ## Installation
 
 ### Cargo
@@ -55,6 +64,9 @@ The output should end up in the `target` folder.
 
 ## Usage
 
+> [!TIP]
+> If you get stuck, run `lovecov --help` !
+
 The `lovecov` CLI is pretty straightforward:
 
 ```bash
@@ -69,9 +81,37 @@ All outputs currently supported:
 2. `html` - single, static HTML file with navigatable tabs
 3. `csv` - single CSV file outlining file-level stats
 
-You can also specify your own output path with `--output-path`.
+### Output path
 
-If you get stuck, run `lovecov --help` !
+You can specify your own output path with `--output-path` or `-o`.
+
+If you provide a file in the path, it will be used instead of the default file (such as `coverage.html`). If you do not provide one, it will output the default file name to that path.
+
+### Ignore files/folders
+
+You can provide a matcher to ignore certain files and folders from the output by using the `--ignore` or `-i` flag.
+
+For example, to ignore all text files and also anything in the _manager_ directory:
+
+```bash
+--ignore=".txt,manager/"
+```
+
+The format is similar to that of a `.gitignore` file, where you can use `*` to match all characters (regex equivalent: `.*`).
+
+A more complex example looks like:
+
+```bash
+--ignore=".txt,manager/*/hidden/,*_example,*_hide,mocks/*.dart"
+```
+
+This will ignore:
+
+1. All `.txt` files
+2. Anything under all `hidden` folders that are found in the `manager` folder
+3. Anything with `_example` in the name
+4. Anything with `_hide` in the name
+5. Anything in the `mocks` folder that ends with `.dart`
 
 ### Examples
 
@@ -83,6 +123,12 @@ lovecov my_lcov.info html
 ```bash
 # output to /my/path/to/report.html
 lovecov my_lcov.info html --output-path=/my/path/to/report.html
+```
+
+```bash
+# output to /my/path/to/report.html
+# and skip/ignore anything that matches the ignore conditions
+lovecov my_lcov.info html --output-path=/my/path/to/report.html --ignore="standard_link_path,*_manager.dart,helper"
 ```
 
 ## Screenshots
@@ -110,5 +156,5 @@ See [CONTRIBUTING](CONTRIBUTING.md) for how.
 - More output formats
 - Support branch data
 - Improvements to HTML output, such as progress bars and color-coding
-- Utilities options, such as omitting files from outputs
+- More optional flags for manipulation of output
 - `.lovecov` file to make setup easier
