@@ -110,6 +110,13 @@ impl FileData {
             lines,
         }
     }
+
+    pub fn full_path(&self) -> String {
+        let mut result = self.path.join("/");
+        result.push('/');
+        result.push_str(&self.name);
+        result
+    }
 }
 
 impl FolderData {

@@ -30,9 +30,7 @@ impl CsvOutput {
                 utils::calc_percent(file.function_hit_count as f32, file.function_count as f32);
             let line_percent =
                 utils::calc_percent(file.line_hit_count as f32, file.line_count as f32);
-            let mut path = file.path.join("/");
-            path.push('/');
-            path.push_str(&file.name);
+            let path = file.full_path();
 
             writeln!(
                 output,
