@@ -7,13 +7,16 @@ use crate::{
     cli::{args::LovecovArgs, generator_type::GeneratorType},
     errors::LovecovError,
     output::generator::Generator,
-    parser::{field::Field, file_tree::FileTree, record::RecordBuilder},
+    parser::{
+        field::Field, file_tree::FileTree, ignore::IgnoreCondition, record_builder::RecordBuilder,
+    },
 };
 
 pub struct Lovecov<R> {
     tree: FileTree,
     current_record: Option<RecordBuilder>,
     output_generator: Generator,
+    ignorer: Option<IgnoreCondition>,
     file: R,
 }
 
@@ -29,13 +32,20 @@ impl Lovecov<BufReader<File>> {
 impl<R: BufRead> Lovecov<R> {
     fn from_reader(args: LovecovArgs, reader: R) -> Result<Self, LovecovError> {
         let generator_type = args.output.clone().unwrap_or(GeneratorType::Summary);
-        let generator = Generator::from_type_and_args(args, generator_type);
+        let generator = Generator::from_type_and_args(&args, generator_type);
+
+        let ignorer = if let Some(s) = args.ignore {
+            Some(IgnoreCondition::from_str(&s)?)
+        } else {
+            None
+        };
 
         Ok(Self {
             tree: FileTree::new(),
             current_record: None,
             output_generator: generator,
             file: reader,
+            ignorer,
         })
     }
 
@@ -69,7 +79,17 @@ impl<R: BufRead> Lovecov<R> {
                         .record
                         .clone()
                         .expect("Failed to get record when end reached");
-                    self.tree.add_file(record)?;
+
+                    let should_ignore = if let Some(ignorer) = &self.ignorer {
+                        ignorer.should_ignore(&record.full_path())
+                    } else {
+                        false
+                    };
+
+                    if !should_ignore {
+                        self.tree.add_file(record)?;
+                    }
+
                     self.current_record = None;
                 }
             }
@@ -93,6 +113,7 @@ mod tests {
             file_path: "adasdasdasdasds".into(),
             output: None,
             output_path: None,
+            ignore: None,
         };
 
         let lovecov = Lovecov::from_args(args);
@@ -106,6 +127,7 @@ mod tests {
             file_path: "file.txt".into(),
             output: None,
             output_path: None,
+            ignore: None,
         };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nEND_OF_RECORD\n";
@@ -126,6 +148,7 @@ mod tests {
             file_path: "file.txt".into(),
             output: Some(GeneratorType::Html),
             output_path: None,
+            ignore: None,
         };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nEND_OF_RECORD\n";
@@ -146,6 +169,7 @@ mod tests {
             file_path: "file.txt".into(),
             output: None,
             output_path: None,
+            ignore: None,
         };
 
         let mock_data = "SF:/test/file.txt\nDA:aaaaa\nend_of_record";
@@ -164,6 +188,7 @@ mod tests {
             file_path: "file.txt".into(),
             output: None,
             output_path: None,
+            ignore: None,
         };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nend_of_record\n";

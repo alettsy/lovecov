@@ -14,15 +14,15 @@ pub enum Generator {
 }
 
 impl Generator {
-    pub fn from_type_and_args(args: LovecovArgs, gen_type: GeneratorType) -> Self {
+    pub fn from_type_and_args(args: &LovecovArgs, gen_type: GeneratorType) -> Self {
         match gen_type {
             GeneratorType::Summary => Generator::Summary,
             GeneratorType::Html => Generator::Html(FileOutput::from_path_and_default(
-                args.output_path,
+                args.output_path.clone(),
                 constants::HTML_FILE.to_string(),
             )),
             GeneratorType::Csv => Generator::Csv(FileOutput::from_path_and_default(
-                args.output_path,
+                args.output_path.clone(),
                 constants::CSV_FILE.to_string(),
             )),
         }

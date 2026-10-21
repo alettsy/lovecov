@@ -8,6 +8,7 @@ pub enum LovecovError {
     FileRead,
     FileWrite,
     InvalidFilePath,
+    InvalidIgnoreCondition,
     MissingTag,
     UnknownTag(String),
     InvalidStartTag,
@@ -42,6 +43,9 @@ impl Display for LovecovError {
             }
             LovecovError::FileWrite => writeln!(f, "Failed to write to output file"),
             LovecovError::InvalidFilePath => writeln!(f, "Invalid output path provided"),
+            LovecovError::InvalidIgnoreCondition => {
+                writeln!(f, "Provided ignore condition is invalid")
+            }
         }
     }
 }

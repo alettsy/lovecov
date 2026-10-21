@@ -2,7 +2,6 @@ use clap::Parser;
 
 use crate::cli::generator_type::GeneratorType;
 
-
 #[derive(Parser, Debug)]
 #[command(name = "lovecov")]
 #[command(version = env!("CARGO_PKG_VERSION"))]
@@ -14,4 +13,7 @@ pub struct LovecovArgs {
 
     #[arg(short, long)]
     pub output_path: Option<String>,
+
+    #[arg(short, long)]
+    pub ignore: Option<String>,
 }
