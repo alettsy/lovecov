@@ -54,6 +54,7 @@ mod tests {
             "check,path/to/file.txt",
             "*",
             "*.hide.*",
+            "C:/path with/space,another/space path/",
         ];
 
         for case in cases {
