@@ -1,10 +1,10 @@
 use crate::{
+    errors::LovecovError,
     parser::{
+        field::Field,
         file_data::FileData,
         parts::{Function, Line},
-        field::Field,
     },
-    errors::LovecovError,
 };
 
 pub struct RecordBuilder {
@@ -23,8 +23,7 @@ impl RecordBuilder {
     pub fn process_field(&mut self, field: Field) -> Result<(), LovecovError> {
         if self.record.is_none() {
             if let Field::SourceFile(path) = field {
-                let file_data =
-                    FileData::new(&path).map_err(|_| LovecovError::InvalidStartTag)?;
+                let file_data = FileData::new(&path).map_err(|_| LovecovError::InvalidStartTag)?;
                 self.record = Some(file_data);
                 return Ok(());
             } else {

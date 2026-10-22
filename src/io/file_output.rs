@@ -57,7 +57,7 @@ impl FileOutput {
             }
 
             let last_part = path_parts.last().unwrap();
-            let is_file = Self::check_is_file(&last_part);
+            let is_file = Self::check_is_file(last_part);
 
             let len_to_remove = if is_file { 1 } else { 0 };
             let to_create = path_parts[..path_parts.len() - len_to_remove].join("/");

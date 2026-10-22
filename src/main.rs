@@ -5,12 +5,12 @@ use crate::{cli::args::LovecovArgs, errors::LovecovError, lovecov::Lovecov};
 mod cli;
 mod constants;
 mod errors;
+mod ignore;
+mod io;
 mod lovecov;
 mod output;
 mod parser;
 mod utils;
-mod io;
-mod ignore;
 
 fn main() -> Result<(), LovecovError> {
     let args = LovecovArgs::parse();
