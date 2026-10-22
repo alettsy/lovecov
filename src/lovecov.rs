@@ -6,10 +6,9 @@ use std::{
 use crate::{
     cli::{args::LovecovArgs, generator_type::GeneratorType},
     errors::LovecovError,
+    ignore::IgnoreCondition,
     output::generator::Generator,
-    parser::{
-        field::Field, file_tree::FileTree, ignore::IgnoreCondition, record_builder::RecordBuilder,
-    },
+    parser::{field::Field, file_tree::FileTree, record_builder::RecordBuilder},
 };
 
 pub struct Lovecov<R> {
