@@ -303,7 +303,6 @@ mod tests {
         ];
 
         for case in cases {
-            println!("'{}'", case);
             let record = Field::from_line(case);
             assert!(record.is_err());
         }
