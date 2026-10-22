@@ -56,8 +56,7 @@ impl FileOutput {
                 return Err(());
             }
 
-            let last_part = path_parts.last().unwrap();
-            let is_file = Self::check_is_file(last_part);
+            let is_file = Self::check_is_file(&provided_path);
 
             let len_to_remove = if is_file { 1 } else { 0 };
             let to_create = path_parts[..path_parts.len() - len_to_remove].join("/");
@@ -77,7 +76,7 @@ impl FileOutput {
     }
 
     fn check_is_file(str: &str) -> bool {
-        str.contains(".")
+        !str.is_empty() && !str.ends_with("/")
     }
 
     fn is_valid_path(path: &str) -> bool {
@@ -86,7 +85,7 @@ impl FileOutput {
         PATH_REGEX
             .get_or_init(|| {
                 Regex::new(
-                    r"^(?:[a-zA-Z]:)?(?:[/\\]?[a-zA-Z0-9_\-\.]+(?:[/\\][a-zA-Z0-9_\-\.]+)*)?$",
+                    r"^(?:[a-zA-Z]:)?(?:[\/\\]?[a-zA-Z0-9_\-\.]+(?:[\/\\][a-zA-Z0-9_\-\.]+)*)?[\/\\]?$",
                 )
                 .unwrap()
             })
@@ -126,24 +125,25 @@ mod tests {
 
     #[test]
     fn is_file_invalid() {
-        let cases = vec!["", "file", "very_long-file"];
+        let cases = vec!["", "folder/", "very_long-folder/"];
 
         for case in cases {
-            assert!(!FileOutput::check_is_file(case));
+            assert!(!FileOutput::check_is_file(case), "case '{}' failed", case);
         }
     }
 
     #[test]
     fn process_path_valid() {
         let cases: Vec<String> = vec![
-            "local_folder".into(),
+            "local_folder/".into(),
             "local_file.txt".into(),
-            "/full/path/to/folder".into(),
-            "relative/path/to/folder".into(),
-            "C:/full/path/to/folder".into(),
+            "/full/path/to/folder/".into(),
+            "relative/path/to/folder/".into(),
+            "C:/full/path/to/folder/".into(),
             "/full/path/to/file.txt".into(),
             "relative/path/to/file.txt".into(),
             "C:/full/path/to/file.txt".into(),
+            "/folder/with/unnamed_file".into(),
         ];
 
         for case in cases {
@@ -155,7 +155,7 @@ mod tests {
             };
             let result = file_out.process_path();
 
-            assert!(result.is_ok(), "failed at case {}", case_copy);
+            assert!(result.is_ok(), "case '{}' failed", case_copy);
         }
     }
 
@@ -165,12 +165,12 @@ mod tests {
             "".into(),
             "%".into(),
             "*&!@".into(),
-            "///full/path/to/folder".into(),
-            "/full/path/to////folder".into(),
-            "relat^&#ive/path/to/folder".into(),
-            "AAA:/full/path/to/folder".into(),
-            "C::/full/path/to/folder".into(),
-            "C:/full/path//to/folder".into(),
+            "///full/path/to/folder/".into(),
+            "/full/path/to////folder/".into(),
+            "relat^&#ive/path/to/folder/".into(),
+            "AAA:/full/path/to/folder/".into(),
+            "C::/full/path/to/folder/".into(),
+            "C:/full/path//to/folder/".into(),
             "/full/path/C:/file.txt".into(),
         ];
 
