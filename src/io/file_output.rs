@@ -47,7 +47,8 @@ impl FileOutput {
                 return Err(());
             }
 
-            let mut path_parts: Vec<String> = provided_path
+            let normalized_path = provided_path.trim_end_matches(['/', '\\']);
+            let mut path_parts: Vec<String> = normalized_path
                 .split(['/', '\\'])
                 .map(|s| s.to_string())
                 .collect();
@@ -76,7 +77,7 @@ impl FileOutput {
     }
 
     fn check_is_file(str: &str) -> bool {
-        !str.is_empty() && !str.ends_with("/")
+        !str.is_empty() && !str.ends_with("/") && !str.ends_with("\\")
     }
 
     fn is_valid_path(path: &str) -> bool {
@@ -135,6 +136,11 @@ mod tests {
     #[test]
     fn process_path_valid() {
         let cases: Vec<String> = vec![
+            "/".into(),
+            "C:/".into(),
+            "../".into(),
+            "./".into(),
+            "file.txt".into(),
             "local_folder/".into(),
             "local_file.txt".into(),
             "/full/path/to/folder/".into(),
@@ -156,6 +162,11 @@ mod tests {
             let result = file_out.process_path();
 
             assert!(result.is_ok(), "case '{}' failed", case_copy);
+
+            let str = result.unwrap();
+            assert!(!str.is_empty());
+            assert!(!str.contains("//"));
+            assert!(!str.contains("\\\\"));
         }
     }
 
