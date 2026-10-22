@@ -62,9 +62,11 @@ impl FileOutput {
             let len_to_remove = if is_file { 1 } else { 0 };
             let to_create = path_parts[..path_parts.len() - len_to_remove].join("/");
 
-            self.file_sys
-                .create_dir_all(Path::new(&to_create))
-                .map_err(|_| ())?;
+            if !to_create.is_empty() {
+                self.file_sys
+                    .create_dir_all(Path::new(&to_create))
+                    .map_err(|_| ())?;
+            }
 
             if is_file {
                 Ok(provided_path)
