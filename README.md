@@ -87,6 +87,16 @@ You can specify your own output path with `--output-path` or `-o`.
 
 If you provide a file in the path, it will be used instead of the default file (such as `coverage.html`). If you do not provide one, it will output the default file name to that path.
 
+For differentiating between a file and folder, a trailing slash will treat it as a folder. For example:
+
+```bash
+# "folder" is considered to be a folder because of the last "/"
+--output-path="/path/to/folder/"
+
+# "file" is considered a file because of a missing trailing "/"
+--output-path="/path/to/file"
+```
+
 ### Ignore files/folders
 
 You can provide a matcher to ignore certain files and folders from the output by using the `--ignore` or `-i` flag.
