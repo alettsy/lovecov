@@ -190,8 +190,8 @@ mod tests {
         assert!(merged.function_hit_count == 0);
         assert!(merged.line_count == 0);
         assert!(merged.line_hit_count == 0);
-        assert!(merged.functions.len() == 0);
-        assert!(merged.lines.len() == 0);
+        assert!(merged.functions.is_empty());
+        assert!(merged.lines.is_empty());
     }
 
     #[test]
