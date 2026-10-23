@@ -123,6 +123,10 @@ This will ignore:
 4. Anything with `_hide` in the name
 5. Anything in the `mocks` folder that ends with `.dart`
 
+### Other flags
+
+You can use the `--html-use-bars` flag to change the HTML to use progress bars instead of a numerical percentage.
+
 ### Examples
 
 ```bash
@@ -150,6 +154,7 @@ lovecov my_lcov.info html --output-path=/my/path/to/report.html --ignore="standa
 ### HTML
 
 ![HTML](docs/html.png)
+![HTML](docs/html_bars.png)
 
 ### CSV
 
