@@ -163,6 +163,10 @@ const HTML_TEMPLATE_START: &str = r#"<!doctype html>
                 --grey-color: #c4c4c4;
             }
 
+            hr {
+                margin-bottom: 2px;
+            }
+
             details {
                 margin-left: 20px;
             }
@@ -175,6 +179,7 @@ const HTML_TEMPLATE_START: &str = r#"<!doctype html>
 
             details > summary::before {
                 content: "+";
+                color: #06b6d4;
             }
 
             details[open] > summary::before {
