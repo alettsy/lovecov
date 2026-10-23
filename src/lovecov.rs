@@ -113,6 +113,7 @@ mod tests {
             output: None,
             output_path: None,
             ignore: None,
+            html_use_bars: false,
         };
 
         let lovecov = Lovecov::from_args(args);
@@ -127,6 +128,7 @@ mod tests {
             output: None,
             output_path: None,
             ignore: None,
+            html_use_bars: false,
         };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nEND_OF_RECORD\n";
@@ -148,6 +150,7 @@ mod tests {
             output: Some(GeneratorType::Html),
             output_path: None,
             ignore: None,
+            html_use_bars: false,
         };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nEND_OF_RECORD\n";
@@ -158,7 +161,7 @@ mod tests {
         assert!(lovecov.is_ok());
         assert!(matches!(
             lovecov.unwrap().output_generator,
-            Generator::Html(_)
+            Generator::Html(_, _)
         ));
     }
 
@@ -169,6 +172,7 @@ mod tests {
             output: None,
             output_path: None,
             ignore: None,
+            html_use_bars: false,
         };
 
         let mock_data = "SF:/test/file.txt\nDA:aaaaa\nend_of_record";
@@ -188,6 +192,7 @@ mod tests {
             output: None,
             output_path: None,
             ignore: None,
+            html_use_bars: false,
         };
 
         let mock_data = "SF:src/lib.rs\nDA:1,1\nend_of_record\n";

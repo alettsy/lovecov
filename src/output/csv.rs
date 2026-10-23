@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub struct CsvOutput {
-    pub file_out: FileOutput,
+    file_out: FileOutput,
 }
 
 impl OutputGenerator for CsvOutput {
@@ -24,6 +24,10 @@ impl OutputGenerator for CsvOutput {
 }
 
 impl CsvOutput {
+    pub fn new(file_out: FileOutput) -> Self {
+        Self { file_out }
+    }
+
     fn generate_csv(folder: &FolderData, output: &mut dyn Write) -> Result<(), ()> {
         for file in folder.files.values() {
             let func_percent =

@@ -16,4 +16,7 @@ pub struct LovecovArgs {
 
     #[arg(short, long)]
     pub ignore: Option<String>,
+
+    #[arg(long, default_value_t = false, default_missing_value = "true")]
+    pub html_use_bars: bool,
 }
