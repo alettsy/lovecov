@@ -5,7 +5,7 @@ use crate::{
     io::file_output::FileOutput,
     output::OutputGenerator,
     parser::{file_data::FolderData, file_tree::FileTree},
-    utils,
+    utils::percent::calc_percent,
 };
 
 pub struct CsvOutput {
@@ -31,9 +31,8 @@ impl CsvOutput {
     fn generate_csv(folder: &FolderData, output: &mut dyn Write) -> Result<(), ()> {
         for file in folder.files.values() {
             let func_percent =
-                utils::calc_percent(file.function_hit_count as f32, file.function_count as f32);
-            let line_percent =
-                utils::calc_percent(file.line_hit_count as f32, file.line_count as f32);
+                calc_percent(file.function_hit_count as f32, file.function_count as f32);
+            let line_percent = calc_percent(file.line_hit_count as f32, file.line_count as f32);
             let path = file.full_path();
 
             writeln!(

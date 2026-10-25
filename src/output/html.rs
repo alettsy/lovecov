@@ -5,7 +5,7 @@ use crate::{
     io::file_output::FileOutput,
     output::OutputGenerator,
     parser::{file_data::FolderData, file_tree::FileTree},
-    utils,
+    utils::{escape_html::escape_html, percent::calc_percent},
 };
 
 pub struct HtmlOutput {
@@ -40,7 +40,12 @@ impl HtmlOutput {
 
             writeln!(output, "<details>").map_err(|_| ())?;
             writeln!(output, r#"<summary class="row">"#).map_err(|_| ())?;
-            writeln!(output, r#"<div class="name">{}</div>"#, folder.name).map_err(|_| ())?;
+            writeln!(
+                output,
+                r#"<div class="name">{}</div>"#,
+                escape_html(&folder.name)
+            )
+            .map_err(|_| ())?;
             self.write_line_data(output, folder.line_count, folder.line_hit_count)?;
             self.write_function_data(output, folder.function_count, folder.function_hit_count)?;
             writeln!(output, "</summary>").map_err(|_| ())?;
@@ -55,7 +60,12 @@ impl HtmlOutput {
             let file = folder.files.get(&name).unwrap();
 
             writeln!(output, r#"<div class="file row">"#).map_err(|_| ())?;
-            writeln!(output, r#"<div class="name">{}</div>"#, file.name).map_err(|_| ())?;
+            writeln!(
+                output,
+                r#"<div class="name">{}</div>"#,
+                escape_html(&file.name)
+            )
+            .map_err(|_| ())?;
             self.write_line_data(output, file.line_count, file.line_hit_count)?;
             self.write_function_data(output, file.function_count, file.function_hit_count)?;
             writeln!(output, "</div>").map_err(|_| ())?;
@@ -70,7 +80,7 @@ impl HtmlOutput {
         lines_total: u32,
         lines_hit: u32,
     ) -> Result<(), ()> {
-        let percentage = utils::calc_percent(lines_hit as f32, lines_total as f32);
+        let percentage = calc_percent(lines_hit as f32, lines_total as f32);
         let color = Self::get_color_from_percent(percentage, lines_total);
 
         writeln!(
@@ -105,7 +115,7 @@ impl HtmlOutput {
         functions_total: u32,
         functions_hit: u32,
     ) -> Result<(), ()> {
-        let percentage = utils::calc_percent(functions_hit as f32, functions_total as f32);
+        let percentage = calc_percent(functions_hit as f32, functions_total as f32);
         let color = Self::get_color_from_percent(percentage, functions_total);
 
         writeln!(

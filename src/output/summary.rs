@@ -2,7 +2,7 @@ use crate::{
     errors::LovecovError,
     output::OutputGenerator,
     parser::{file_data::FolderData, file_tree::FileTree},
-    utils,
+    utils::percent::calc_percent,
 };
 
 pub struct SummaryOutput;
@@ -13,9 +13,9 @@ impl OutputGenerator for SummaryOutput {
         Self::generate_summary(&tree.root, &mut summary);
 
         let line_percentage: f32 =
-            utils::calc_percent(summary.line_hit_total as f32, summary.line_total as f32);
+            calc_percent(summary.line_hit_total as f32, summary.line_total as f32);
 
-        let function_percentage: f32 = utils::calc_percent(
+        let function_percentage: f32 = calc_percent(
             summary.function_hit_total as f32,
             summary.function_total as f32,
         );
