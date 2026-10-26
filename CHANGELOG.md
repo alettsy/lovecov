@@ -1,3 +1,12 @@
+## v1.2.0
+
+Additions:
+
+- Escaped HTML to prevent XSS
+- Added colors to better reflect coverage state
+- Colored the expansion icon to make it clearer which items are folders or files
+- Add HTML progress bars option `--html-use-bars` to replace raw percentage, if desired
+
 ## v1.1.0
 
 Additions:

@@ -168,8 +168,9 @@ See [CONTRIBUTING](CONTRIBUTING.md) for how.
 
 ## Planned features
 
-- More output formats
-- Support branch data
-- Improvements to HTML output, such as progress bars and color-coding
-- More optional flags for manipulation of output
-- `.lovecov` file to make setup easier
+- [ ] Support for branch data
+- [ ] Output: Cobertura XML
+- [ ] Output: Coveralls JSON
+- [ ] Output: Regular JSON
+- [ ] Output: Markdown
+- [ ] Output: Pretty print table
